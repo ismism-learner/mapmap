@@ -11,9 +11,8 @@
 - 🖱️ 完整的鼠标交互支持
   - 左键拖动：旋转地球
   - 滚轮：缩放视图
-  - 右键拖动：平移视图
-- 🔄 地球自动缓慢自转
 - 🎨 现代化的 UI 设计
+- 🌟 高质量地球纹理
 
 ## 技术栈
 
@@ -74,7 +73,7 @@ mapmap/
 │   ├── main.tsx                # 应用入口
 │   └── index.css               # 全局样式
 ├── public/
-│   ├── tif1.png                # 地球底图纹理
+│   ├── earth_hq.jpg            # 高质量地球底图纹理
 │   └── shapefiles/             # Shapefile 数据
 ├── 地图数据/                   # 原始地图数据
 │   ├── 10m 争议/
@@ -89,11 +88,12 @@ mapmap/
 
 ## 已实现功能
 
-- ✅ 加载和渲染真实地图纹理（tif1.png）
-- ✅ 解析和渲染 SHP 文件边界数据
+- ✅ 加载和渲染高质量地球纹理
+- ✅ 解析和渲染 SHP 文件边界数据（使用 ArrayBuffer 方式）
 - ✅ 多图层管理系统
 - ✅ 交互式图层控制面板
 - ✅ 经纬度坐标到球面 3D 坐标转换
+- ✅ 优化的纹理映射（避免极点撕裂）
 
 ## 未来计划
 
@@ -138,11 +138,13 @@ const [layers, setLayers] = useState<LayerConfig[]>([
 
 ### 自定义地球纹理
 
-替换 `public/tif1.png` 文件，或在 `Globe.tsx` 中修改纹理路径：
+替换 `public/earth_hq.jpg` 文件，或在 `Globe.tsx` 中修改纹理路径：
 
 ```tsx
-const texture = useLoader(TextureLoader, '/your-texture.png')
+const texture = useLoader(TextureLoader, '/your-texture.jpg')
 ```
+
+获取更高质量的地球纹理，请参考 [TEXTURE_GUIDE.md](./TEXTURE_GUIDE.md)。
 
 ## License
 
