@@ -13,11 +13,15 @@ declare module 'shpjs' {
     features: GeoJSONFeature[]
   }
 
+  interface ShapefileBuffers {
+    shp: ArrayBuffer
+    dbf?: ArrayBuffer
+    cpg?: ArrayBuffer
+    prj?: string
+  }
+
   interface ShpJS {
-    (path: string): Promise<GeoJSON | GeoJSONFeature[]>
-    parseShp(buffer: ArrayBuffer, prj?: string): any
-    parseDbf(buffer: ArrayBuffer, encoding?: string): any[]
-    combine(arr: any[]): GeoJSON
+    (input: string | ArrayBuffer | ShapefileBuffers): Promise<GeoJSON | GeoJSONFeature[]>
   }
 
   const shp: ShpJS
