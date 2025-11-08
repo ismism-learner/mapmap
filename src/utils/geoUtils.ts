@@ -15,13 +15,15 @@ export async function loadShapefile(shpPath: string) {
     console.log('📂 Base path:', basePath)
 
     // 在浏览器环境中，需要通过 fetch 加载文件
-    // shpjs 可以接受一个包含 .shp 和 .dbf 的 buffer 数组，或者一个 zip 文件
-
-    // 方法1: 尝试加载单独的 .shp 和 .dbf 文件
     const [shpResponse, dbfResponse] = await Promise.all([
       fetch(`${basePath}.shp`),
       fetch(`${basePath}.dbf`)
     ])
+
+    console.log('📥 Fetch responses:', {
+      shp: { ok: shpResponse.ok, status: shpResponse.status },
+      dbf: { ok: dbfResponse.ok, status: dbfResponse.status }
+    })
 
     if (!shpResponse.ok) {
       throw new Error(`Failed to fetch SHP file: ${shpResponse.status} ${shpResponse.statusText}`)
@@ -38,16 +40,35 @@ export async function loadShapefile(shpPath: string) {
       dbfResponse.arrayBuffer()
     ])
 
-    console.log('✅ Buffers loaded, SHP size:', shpBuffer.byteLength, 'DBF size:', dbfBuffer.byteLength)
+    console.log('✅ Buffers loaded:', {
+      shpSize: shpBuffer.byteLength,
+      dbfSize: dbfBuffer.byteLength
+    })
 
-    // 使用 shpjs 解析
-    const geojson = await shp.combine([
-      shp.parseShp(shpBuffer),
-      shp.parseDbf(dbfBuffer)
-    ])
+    // 使用 shpjs 解析 - 正确的方式
+    const shpData = shp.parseShp(shpBuffer)
+    const dbfData = shp.parseDbf(dbfBuffer)
 
-    console.log('✅ GeoJSON parsed successfully:', geojson)
-    console.log('📊 Features count:', geojson.features?.length || 0)
+    console.log('📊 Parsed data:', {
+      shpFeatures: shpData.length,
+      dbfRecords: dbfData.length
+    })
+
+    // 组合成 GeoJSON
+    const geojson = shp.combine([shpData, dbfData])
+
+    console.log('✅ GeoJSON created:', {
+      type: geojson.type,
+      featuresCount: geojson.features?.length || 0
+    })
+
+    // 打印第一个特征作为样本
+    if (geojson.features && geojson.features.length > 0) {
+      console.log('📝 Sample feature:', {
+        type: geojson.features[0].geometry?.type,
+        properties: Object.keys(geojson.features[0].properties || {})
+      })
+    }
 
     return geojson
   } catch (error) {
