@@ -1,0 +1,77 @@
+.layer-control {
+  position: absolute;
+  top: 120px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  color: white;
+  min-width: 200px;
+  max-width: 280px;
+  z-index: 10;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.layer-control-header {
+  padding: 15px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.layer-control-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.toggle-icon {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+}
+
+.toggle-icon.open {
+  transform: rotate(180deg);
+}
+
+.layer-control-body {
+  padding: 10px;
+}
+
+.layer-item {
+  padding: 8px 5px;
+}
+
+.layer-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.layer-label input[type="checkbox"] {
+  margin-right: 10px;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.layer-color {
+  display: inline-block;
+  width: 20px;
+  height: 3px;
+  margin-right: 8px;
+  border-radius: 2px;
+}
+
+.layer-name {
+  flex: 1;
+}
+
+.layer-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
