@@ -45,28 +45,24 @@ export async function loadShapefile(shpPath: string) {
       dbfSize: dbfBuffer.byteLength
     })
 
-    // 使用 shpjs 解析 - 正确的方式
-    const shpData = shp.parseShp(shpBuffer)
-    const dbfData = shp.parseDbf(dbfBuffer)
-
-    console.log('📊 Parsed data:', {
-      shpFeatures: shpData.length,
-      dbfRecords: dbfData.length
+    // shpjs 接受一个包含多个文件的对象或单个 zip ArrayBuffer
+    // 我们传递一个对象，键是文件扩展名，值是 ArrayBuffer
+    const geojson = await shp({
+      shp: shpBuffer,
+      dbf: dbfBuffer
     })
 
-    // 组合成 GeoJSON
-    const geojson = shp.combine([shpData, dbfData])
-
     console.log('✅ GeoJSON created:', {
-      type: geojson.type,
-      featuresCount: geojson.features?.length || 0
+      type: Array.isArray(geojson) ? 'FeatureArray' : geojson.type,
+      featuresCount: Array.isArray(geojson) ? geojson.length : geojson.features?.length || 0
     })
 
     // 打印第一个特征作为样本
-    if (geojson.features && geojson.features.length > 0) {
+    const features = Array.isArray(geojson) ? geojson : geojson.features
+    if (features && features.length > 0) {
       console.log('📝 Sample feature:', {
-        type: geojson.features[0].geometry?.type,
-        properties: Object.keys(geojson.features[0].properties || {})
+        type: features[0].geometry?.type,
+        properties: Object.keys(features[0].properties || {})
       })
     }
 
