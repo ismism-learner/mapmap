@@ -9,7 +9,7 @@ import * as THREE from 'three'
  */
 function Globe() {
   // 加载地球纹理
-  const texture = useLoader(TextureLoader, '/tif1.png')
+  const texture = useLoader(TextureLoader, '/earth_hq.jpg')
 
   // 配置纹理以避免极点撕裂
   texture.wrapS = THREE.RepeatWrapping

@@ -63,17 +63,16 @@ function App() {
         {/* 轨道控制器 - 支持鼠标拖动旋转 */}
         <OrbitControls
           enableZoom={true}
-          enablePan={true}
+          enablePan={false}
           enableRotate={true}
           zoomSpeed={0.6}
-          panSpeed={0.5}
           rotateSpeed={0.4}
         />
       </Canvas>
 
       <div className="info">
         <h1>MapMap - 3D 地球</h1>
-        <p>鼠标拖动旋转 | 滚轮缩放 | 右键平移</p>
+        <p>鼠标拖动旋转 | 滚轮缩放</p>
       </div>
 
       {/* 图层控制面板 */}
