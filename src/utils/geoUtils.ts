@@ -2,16 +2,24 @@ import shp from 'shpjs'
 
 /**
  * 加载 SHP 文件并转换为 GeoJSON 格式
- * @param shpPath - SHP 文件的路径
+ * @param shpPath - SHP 文件的路径（不带扩展名）
  * @returns GeoJSON 数据
  */
 export async function loadShapefile(shpPath: string) {
   try {
-    // shpjs 可以直接加载 .shp 文件，它会自动查找同名的 .dbf 和 .shx 文件
-    const geojson = await shp(shpPath)
+    console.log('📂 loadShapefile called with path:', shpPath)
+
+    // 移除 .shp 扩展名（如果有），shpjs 会自动添加
+    const basePath = shpPath.replace(/\.shp$/, '')
+    console.log('📂 Base path:', basePath)
+
+    // shpjs 需要基础路径，它会自动加载 .shp, .dbf, .shx 等文件
+    const geojson = await shp(basePath)
+
+    console.log('✅ GeoJSON loaded successfully:', geojson)
     return geojson
   } catch (error) {
-    console.error(`Error loading shapefile ${shpPath}:`, error)
+    console.error(`❌ Error loading shapefile ${shpPath}:`, error)
     throw error
   }
 }
