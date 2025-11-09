@@ -228,6 +228,24 @@ function App() {
     setSelectedMarker(null)
   }
 
+  // 处理标签拖动
+  const handleLabelDrag = (markerId: string, offset: { x: number; y: number }) => {
+    setCustomMarkers((prev) =>
+      prev.map((m) =>
+        m.id === markerId ? { ...m, labelOffset: offset } : m
+      )
+    )
+  }
+
+  // 处理连接线标签修改
+  const handleConnectionLabelChange = (connectionId: string, newLabel: string) => {
+    setConnections((prev) =>
+      prev.map((c) =>
+        c.id === connectionId ? { ...c, label: newLabel } : c
+      )
+    )
+  }
+
   // 切换自动连接模式
   const handleToggleAutoConnect = () => {
     setAutoConnect(!autoConnect)
@@ -373,6 +391,8 @@ function App() {
           texturePath={currentTexturePath}
           isFlatMode={isFlatMode}
           useOptimizedRendering={true}
+          onLabelDrag={handleLabelDrag}
+          onConnectionLabelChange={handleConnectionLabelChange}
         />
       </Canvas>
 

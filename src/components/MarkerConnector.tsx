@@ -14,12 +14,15 @@ interface MarkerConnectorProps {
   isFlat?: boolean
   mapWidth?: number
   mapHeight?: number
+  label?: string // 连接线标签
+  onLabelChange?: (newLabel: string) => void // 标签修改回调
 }
 
 /**
  * 图钉之间的连接线
  * - 球形模式：使用简化的贝塞尔曲线（性能优化）
  * - 平面模式：使用直线连接（2D）
+ * - 支持双击编辑标签
  * - 支持悬停显示事件信息
  */
 function MarkerConnector({
@@ -31,8 +34,12 @@ function MarkerConnector({
   lineWidth = 2,
   isFlat = false,
   mapWidth = 4,
-  mapHeight = 2
+  mapHeight = 2,
+  label = '',
+  onLabelChange
 }: MarkerConnectorProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState(label)
   const [hovered, setHovered] = useState(false)
 
   // 计算连线的点和中点
@@ -101,6 +108,36 @@ function MarkerConnector({
     }
   }, [fromMarker, toMarker, radius, isFlat, mapWidth, mapHeight])
 
+  // 处理双击编辑
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsEditing(true)
+    setEditValue(label)
+  }
+
+  // 保存编辑
+  const handleSave = () => {
+    if (onLabelChange) {
+      onLabelChange(editValue)
+    }
+    setIsEditing(false)
+  }
+
+  // 取消编辑
+  const handleCancel = () => {
+    setEditValue(label)
+    setIsEditing(false)
+  }
+
+  // 处理按键
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave()
+    } else if (e.key === 'Escape') {
+      handleCancel()
+    }
+  }
+
   return (
     <group>
       <Line
@@ -119,7 +156,101 @@ function MarkerConnector({
         }}
       />
 
-      {/* 悬停时显示事件信息 */}
+      {/* 标签编辑（优先级高） */}
+      {!connection.eventInfo && (
+        <Html
+          position={[midpoint.x, midpoint.y, midpoint.z]}
+          center
+          distanceFactor={isFlat ? 1 : 0.5}
+          style={{
+            pointerEvents: 'auto',
+            zIndex: 100,
+          }}
+          zIndexRange={[100, 0]}
+        >
+          {isEditing ? (
+            <div
+              style={{
+                display: 'flex',
+                gap: '4px',
+                alignItems: 'center',
+              }}
+            >
+              <input
+                type="text"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                autoFocus
+                style={{
+                  background: 'rgba(0, 0, 0, 0.9)',
+                  color: 'white',
+                  border: '1px solid #00ffff',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  outline: 'none',
+                  minWidth: '100px',
+                }}
+              />
+              <button
+                onClick={handleSave}
+                style={{
+                  background: '#00ffff',
+                  color: 'black',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                }}
+              >
+                ✓
+              </button>
+              <button
+                onClick={handleCancel}
+                style={{
+                  background: '#ff4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <div
+              onDoubleClick={handleDoubleClick}
+              style={{
+                background: label ? 'rgba(0, 255, 255, 0.9)' : 'rgba(0, 255, 255, 0.3)',
+                color: 'black',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontWeight: '500',
+                whiteSpace: 'nowrap',
+                cursor: 'pointer',
+                border: '1px solid rgba(0, 255, 255, 0.5)',
+                userSelect: 'none',
+                minWidth: label ? 'auto' : '60px',
+                textAlign: 'center',
+              }}
+              title="双击编辑"
+            >
+              {label || '双击添加'}
+            </div>
+          )}
+        </Html>
+      )}
+
+      {/* 悬停时显示事件信息（eventInfo优先） */}
       {hovered && connection.eventInfo && (
         <Html
           position={[midpoint.x, midpoint.y, midpoint.z]}

@@ -7,6 +7,7 @@ export interface CustomMarker {
   longitude: number
   info: MarkerInfo
   createdAt: number
+  labelOffset?: { x: number; y: number } // 标签偏移位置（像素）
 }
 
 /**
@@ -17,6 +18,13 @@ export interface MarkerInfo {
   description: string
   links: MarkerLink[]
   images: MarkerImage[]
+  videoInfo?: {
+    bvid: string
+    title: string
+    cover: string
+    author: string
+    url: string
+  }
 }
 
 /**
@@ -44,7 +52,8 @@ export interface MarkerConnection {
   id: string
   fromMarkerId: string
   toMarkerId: string
-  // 事件信息（可选）
+  label?: string // 连接线上的标签文字（简单模式）
+  // 事件信息（可选，详细模式）
   eventInfo?: {
     eventName: string      // 事件名称
     time: string          // 时间
