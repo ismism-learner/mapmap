@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { City, searchCities } from '../utils/cityUtils'
+import { TranslationData } from '../utils/translationUtils'
 import './SearchBar.css'
 
 interface SearchBarProps {
   cities: City[]
   onSelectCity: (city: City) => void
+  translations?: TranslationData | null
 }
 
 /**
@@ -13,7 +15,7 @@ interface SearchBarProps {
  * - 显示搜索结果
  * - 支持键盘导航
  */
-function SearchBar({ cities, onSelectCity }: SearchBarProps) {
+function SearchBar({ cities, onSelectCity, translations }: SearchBarProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<City[]>([])
   const [showResults, setShowResults] = useState(false)
@@ -27,11 +29,11 @@ function SearchBar({ cities, onSelectCity }: SearchBarProps) {
       return
     }
 
-    const searchResults = searchCities(cities, query)
+    const searchResults = searchCities(cities, query, translations || undefined)
     setResults(searchResults)
     setShowResults(true)
     setSelectedIndex(0)
-  }, [query, cities])
+  }, [query, cities, translations])
 
   // 点击外部关闭搜索结果
   useEffect(() => {

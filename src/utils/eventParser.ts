@@ -1,4 +1,5 @@
 import { City } from './cityUtils'
+import { TranslationData, smartTranslate } from './translationUtils'
 
 export interface ParsedConnection {
   type: 'connection'
@@ -83,35 +84,45 @@ export function parseEventText(text: string): ParsedEvent[] {
  * - "美国,加利福尼亚" -> 搜索加利福尼亚州的城市
  * - "中国,北京" -> 搜索北京
  * - "德国" -> 搜索德国的主要城市
+ * 支持中文地名，会自动翻译为英文
  */
-export function geocodeLocation(locationStr: string, cities: City[]): { latitude: number; longitude: number } | null {
+export function geocodeLocation(
+  locationStr: string,
+  cities: City[],
+  translations?: TranslationData
+): { latitude: number; longitude: number } | null {
   if (!locationStr || !cities.length) {
     return null
   }
 
   const parts = locationStr.split(',').map(p => p.trim())
 
+  // 如果有翻译数据，将中文翻译为英文
+  const translatedParts = translations
+    ? parts.map(part => smartTranslate(part, translations))
+    : parts
+
   let searchQuery = ''
   let countryName = ''
   let stateName = ''
   let cityName = ''
 
-  if (parts.length === 1) {
+  if (translatedParts.length === 1) {
     // 单个名称：可能是国家或城市
-    searchQuery = parts[0]
-    countryName = parts[0]
-  } else if (parts.length === 2) {
+    searchQuery = translatedParts[0]
+    countryName = translatedParts[0]
+  } else if (translatedParts.length === 2) {
     // 两个名称：国家,州/城市
-    countryName = parts[0]
-    cityName = parts[1]
-    stateName = parts[1]
-    searchQuery = parts[1] // 优先搜索城市/州
-  } else if (parts.length >= 3) {
+    countryName = translatedParts[0]
+    cityName = translatedParts[1]
+    stateName = translatedParts[1]
+    searchQuery = translatedParts[1] // 优先搜索城市/州
+  } else if (translatedParts.length >= 3) {
     // 三个或更多：国家,州,城市
-    countryName = parts[0]
-    stateName = parts[1]
-    cityName = parts[2]
-    searchQuery = parts[2] // 优先搜索城市
+    countryName = translatedParts[0]
+    stateName = translatedParts[1]
+    cityName = translatedParts[2]
+    searchQuery = translatedParts[2] // 优先搜索城市
   }
 
   // 搜索匹配的城市
@@ -182,7 +193,8 @@ export interface GeocodedConnection {
 
 export function geocodeEvents(
   events: ParsedEvent[],
-  cities: City[]
+  cities: City[],
+  translations?: TranslationData
 ): {
   markers: GeocodedMarker[]
   connections: GeocodedConnection[]
@@ -192,7 +204,7 @@ export function geocodeEvents(
 
   for (const event of events) {
     if (event.type === 'pin') {
-      const coords = geocodeLocation(event.location, cities)
+      const coords = geocodeLocation(event.location, cities, translations)
       if (coords) {
         markers.push({
           latitude: coords.latitude,
@@ -203,8 +215,8 @@ export function geocodeEvents(
         })
       }
     } else if (event.type === 'connection') {
-      const coords1 = geocodeLocation(event.location1, cities)
-      const coords2 = geocodeLocation(event.location2, cities)
+      const coords1 = geocodeLocation(event.location1, cities, translations)
+      const coords2 = geocodeLocation(event.location2, cities, translations)
 
       if (coords1 && coords2) {
         const marker1: GeocodedMarker = {
