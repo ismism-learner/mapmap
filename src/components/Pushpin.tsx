@@ -83,6 +83,8 @@ function Pushpin({
       position={[x, y, z]}
       center
       occlude={globeRef ? [globeRef] : undefined}
+      transform
+      sprite
       style={{
         transition: 'opacity 0.2s',
         pointerEvents: 'none',
@@ -141,12 +143,12 @@ function Pushpin({
             style={{
               background: 'rgba(0, 0, 0, 0.85)',
               color: 'white',
-              padding: '2px 6px',
-              borderRadius: '3px',
-              fontSize: '8px',
+              padding: '3px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
               fontWeight: '500',
               whiteSpace: 'nowrap',
-              marginTop: '4px',
+              marginTop: '6px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
               border: '1px solid rgba(255,255,255,0.2)',
               pointerEvents: 'none',
