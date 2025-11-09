@@ -5,6 +5,7 @@ import LayerControl, { LayerConfig } from './components/LayerControl'
 import SearchBar from './components/SearchBar'
 import InfoCard from './components/InfoCard'
 import EditableInfoPanel from './components/EditableInfoPanel'
+import ConnectModeToggle from './components/ConnectModeToggle'
 import { City, loadCities } from './utils/cityUtils'
 import {
   CustomMarker,
@@ -36,6 +37,10 @@ function App() {
   const [connections, setConnections] = useState<MarkerConnection[]>([])
   const [selectedMarker, setSelectedMarker] = useState<CustomMarker | null>(null)
   const [lastMarker, setLastMarker] = useState<CustomMarker | null>(null)
+
+  // 连接模式
+  const [isConnectMode, setIsConnectMode] = useState(false)
+  const [firstMarkerForConnect, setFirstMarkerForConnect] = useState<CustomMarker | null>(null)
 
   const [flyToCity, setFlyToCity] = useState<{ lon: number; lat: number } | null>(null)
 
@@ -115,8 +120,37 @@ function App() {
 
   // 点击自定义标记
   const handleClickMarker = (marker: CustomMarker) => {
-    setSelectedMarker(marker)
-    setSelectedCity(null) // 关闭城市信息卡
+    // 如果在连接模式下
+    if (isConnectMode) {
+      if (!firstMarkerForConnect) {
+        // 选择第一个图钉
+        setFirstMarkerForConnect(marker)
+      } else if (firstMarkerForConnect.id !== marker.id) {
+        // 选择第二个图钉，创建连接
+        const newConnection: MarkerConnection = {
+          id: generateId(),
+          fromMarkerId: firstMarkerForConnect.id,
+          toMarkerId: marker.id
+        }
+
+        // 检查是否已存在连接
+        const connectionExists = connections.some(
+          c => (c.fromMarkerId === firstMarkerForConnect.id && c.toMarkerId === marker.id) ||
+               (c.fromMarkerId === marker.id && c.toMarkerId === firstMarkerForConnect.id)
+        )
+
+        if (!connectionExists) {
+          setConnections((prev) => [...prev, newConnection])
+        }
+
+        // 重置选择
+        setFirstMarkerForConnect(null)
+      }
+    } else {
+      // 普通模式：打开信息面板
+      setSelectedMarker(marker)
+      setSelectedCity(null) // 关闭城市信息卡
+    }
   }
 
   // 保存标记信息
@@ -156,6 +190,15 @@ function App() {
     setSelectedMarker(null)
   }
 
+  // 切换连接模式
+  const handleToggleConnectMode = () => {
+    setIsConnectMode(!isConnectMode)
+    setFirstMarkerForConnect(null) // 重置选择
+    if (isConnectMode) {
+      setSelectedMarker(null) // 退出连接模式时关闭信息面板
+    }
+  }
+
   return (
     <div className="app">
       <Canvas camera={{ position: [0, 0, 3], fov: 45 }}>
@@ -168,6 +211,8 @@ function App() {
           onCustomMarkerClick={handleClickMarker}
           onDoubleClick={handleDoubleClick}
           flyToCity={flyToCity}
+          isConnectMode={isConnectMode}
+          selectedMarkerForConnect={firstMarkerForConnect}
         />
       </Canvas>
 
@@ -187,7 +232,7 @@ function App() {
       <InfoCard city={selectedCity} onClose={() => setSelectedCity(null)} />
 
       {/* 自定义标记信息面板 */}
-      {selectedMarker && (
+      {selectedMarker && !isConnectMode && (
         <EditableInfoPanel
           marker={selectedMarker}
           onSave={handleSaveMarkerInfo}
@@ -195,6 +240,13 @@ function App() {
           onDelete={handleDeleteMarker}
         />
       )}
+
+      {/* 连接模式切换按钮 */}
+      <ConnectModeToggle
+        isActive={isConnectMode}
+        onToggle={handleToggleConnectMode}
+        hasSelectedMarker={!!firstMarkerForConnect}
+      />
     </div>
   )
 }
