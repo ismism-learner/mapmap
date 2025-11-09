@@ -58,6 +58,7 @@ function Pushpin({
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
+    setHovered(false) // 点击后立即隐藏标签，避免遮挡编辑面板
     if (onClick) {
       onClick()
     }
