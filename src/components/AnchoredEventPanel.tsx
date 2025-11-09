@@ -170,10 +170,12 @@ const AnchoredEventPanel = memo(function AnchoredEventPanel({
                       <LocationIcon size={12} />
                       <span>{marker.latitude.toFixed(2)}°, {marker.longitude.toFixed(2)}°</span>
                     </div>
-                    {marker.createdAt && (
+                    {(marker.info.time || marker.createdAt) && (
                       <div className="event-time-compact">
                         <ClockIcon size={12} />
-                        <span>{new Date(marker.createdAt).toLocaleDateString('zh-CN')}</span>
+                        <span>
+                          {marker.info.time || new Date(marker.createdAt).toLocaleDateString('zh-CN')}
+                        </span>
                       </div>
                     )}
                   </div>

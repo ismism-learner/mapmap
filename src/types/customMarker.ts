@@ -16,6 +16,7 @@ export interface CustomMarker {
 export interface MarkerInfo {
   title: string
   description: string
+  time?: string  // 事件时间（可选）
   links: MarkerLink[]
   images: MarkerImage[]
   videoInfo?: {
