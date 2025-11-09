@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { Line } from '@react-three/drei'
 import { loadShapefile, lonLatToVector3, lonLatToFlatPosition, vector3ToLonLat } from '../utils/geoUtils'
 import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry.js'
+import earcut from 'earcut'
 
 interface InteractiveBoundaryProps {
   shpPath: string
@@ -236,43 +237,69 @@ function InteractiveBoundary({
                     />
                   </mesh>
                 ) : (
-                  // 球形模式填充（使用多边形三角化）
+                  // 球形模式填充（使用Earcut三角剖分）
                   feature.lines.map((line, idx) => {
                     if (line.length < 3) return null
 
-                    // 创建填充几何体
-                    const shape = new THREE.Shape()
+                    try {
+                      // 步骤1: 准备3D顶点
+                      const vertices3D: number[] = []
+                      line.forEach(point => {
+                        vertices3D.push(point.x, point.y, point.z)
+                      })
 
-                    // 将3D点投影到2D平面进行三角化
-                    const vertices: number[] = []
-                    line.forEach(point => {
-                      vertices.push(point.x, point.y, point.z)
-                    })
+                      // 步骤2: 将3D顶点投影到局部2D平面
+                      // 计算多边形中心
+                      const center = new THREE.Vector3()
+                      line.forEach(point => center.add(point))
+                      center.divideScalar(line.length)
+                      center.normalize() // 归一化，得到球面上的中心方向
 
-                    return (
-                      <mesh
-                        key={`fill-${feature.id}-${idx}`}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleClick(feature)
-                        }}
-                      >
-                        <bufferGeometry>
-                          <bufferAttribute
-                            attach="attributes-position"
-                            count={line.length}
-                            array={new Float32Array(vertices)}
-                            itemSize={3}
+                      // 建立局部坐标系（以中心点为原点的切平面）
+                      const normal = center.clone()
+                      const up = Math.abs(normal.y) < 0.99 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0)
+                      const tangent = new THREE.Vector3().crossVectors(up, normal).normalize()
+                      const bitangent = new THREE.Vector3().crossVectors(normal, tangent).normalize()
+
+                      // 投影到2D
+                      const vertices2D: number[] = []
+                      line.forEach(point => {
+                        const localPoint = point.clone().sub(center.clone().multiplyScalar(radius))
+                        const u = localPoint.dot(tangent)
+                        const v = localPoint.dot(bitangent)
+                        vertices2D.push(u, v)
+                      })
+
+                      // 步骤3: 使用Earcut进行三角剖分
+                      const indices = earcut(vertices2D)
+
+                      // 步骤4: 创建BufferGeometry
+                      const geometry = new THREE.BufferGeometry()
+                      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices3D), 3))
+                      geometry.setIndex(indices)
+                      geometry.computeVertexNormals()
+
+                      return (
+                        <mesh
+                          key={`fill-${feature.id}-${idx}`}
+                          geometry={geometry}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleClick(feature)
+                          }}
+                        >
+                          <meshBasicMaterial
+                            color={fillColor}
+                            transparent
+                            opacity={0.6}
+                            side={THREE.DoubleSide}
                           />
-                        </bufferGeometry>
-                        <meshBasicMaterial
-                          color={fillColor}
-                          transparent
-                          opacity={0.6}
-                          side={THREE.DoubleSide}
-                        />
-                      </mesh>
-                    )
+                        </mesh>
+                      )
+                    } catch (error) {
+                      console.warn(`三角剖分失败 (feature ${feature.id}, line ${idx}):`, error)
+                      return null
+                    }
                   })
                 )}
               </>
