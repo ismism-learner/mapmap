@@ -101,6 +101,22 @@
   animation: slideIn 0.3s ease-out;
 }
 
+/* 收起状态的卡片 */
+.event-card.collapsed {
+  padding: 12px 16px;
+  background: rgba(20, 25, 35, 0.85);
+  border-color: rgba(0, 255, 255, 0.2);
+}
+
+.event-card.collapsed:hover {
+  border-color: rgba(0, 255, 255, 0.5);
+  background: rgba(20, 25, 35, 0.95);
+}
+
+.event-card.collapsed .event-card-header {
+  margin-bottom: 0;
+}
+
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -171,6 +187,16 @@
 .event-card-close:hover {
   background: rgba(255, 68, 68, 0.2);
   color: #ff4444;
+}
+
+/* 卡片收起/展开按钮 */
+.event-card-toggle {
+  transition: all 0.2s ease;
+}
+
+.event-card-toggle:hover {
+  color: #00ffff !important;
+  transform: scale(1.1);
 }
 
 /* 卡片内容 */
