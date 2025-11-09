@@ -87,6 +87,7 @@ function Pushpin({
       occlude={globeRef ? [globeRef] : undefined}
       transform
       sprite
+      distanceFactor={0.15}
       style={{
         transition: 'opacity 0.2s',
         pointerEvents: 'none',
