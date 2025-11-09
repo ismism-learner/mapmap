@@ -31,7 +31,7 @@ function MarkerConnector({
   connection,
   radius = 1.02,
   color = '#00ffff',
-  lineWidth = 2,
+  lineWidth = 4, // 增加线宽，方便点击
   isFlat = false,
   mapWidth = 4,
   mapHeight = 2,
@@ -85,15 +85,32 @@ function MarkerConnector({
       const startVec = new Vector3(start.x, start.y, start.z)
       const endVec = new Vector3(end.x, end.y, end.z)
 
-      // 计算中点，并向外扩展以形成弧线
-      const mid = new Vector3().addVectors(startVec, endVec).multiplyScalar(0.5)
+      // 计算两点之间的角度
+      const angle = startVec.angleTo(endVec)
 
-      // 计算弧线高度（基于距离）
-      const distance = startVec.distanceTo(endVec)
-      const arcHeight = Math.min(distance * 0.3, 0.3) // 限制最大高度
+      // 使用球面插值计算中点，避免对跖点问题
+      const mid = new Vector3()
 
-      // 将中点向外推以形成弧形
-      mid.normalize().multiplyScalar(radius + arcHeight)
+      if (angle > Math.PI * 0.95) {
+        // 对于接近对跖点的情况（>171度），使用垂直于两点的向量
+        const cross = new Vector3().crossVectors(startVec, endVec)
+        if (cross.length() < 0.001) {
+          // 完全对跖，随机选择一个垂直方向
+          const arbitrary = Math.abs(startVec.y) < 0.9
+            ? new Vector3(0, 1, 0)
+            : new Vector3(1, 0, 0)
+          cross.crossVectors(startVec, arbitrary)
+        }
+        cross.normalize()
+        mid.copy(cross).multiplyScalar(radius)
+      } else {
+        // 正常情况：使用球面插值（slerp）
+        mid.copy(startVec).lerp(endVec, 0.5).normalize()
+
+        // 计算弧线高度（基于角度）
+        const arcHeight = Math.min(Math.sin(angle / 2) * 0.3, 0.3)
+        mid.multiplyScalar(radius + arcHeight)
+      }
 
       // 创建贝塞尔曲线
       const curve = new QuadraticBezierCurve3(startVec, mid, endVec)
@@ -108,9 +125,8 @@ function MarkerConnector({
     }
   }, [fromMarker, toMarker, radius, isFlat, mapWidth, mapHeight])
 
-  // 处理双击编辑
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
+  // 处理双击线条进行编辑
+  const handleLineDoubleClick = () => {
     setIsEditing(true)
     setEditValue(label)
   }
@@ -154,10 +170,16 @@ function MarkerConnector({
           e.stopPropagation()
           setHovered(false)
         }}
+        onDoubleClick={(e) => {
+          e.stopPropagation()
+          if (!connection.eventInfo) {
+            handleLineDoubleClick()
+          }
+        }}
       />
 
-      {/* 标签编辑（优先级高） */}
-      {!connection.eventInfo && (
+      {/* 标签编辑（只在编辑时显示） */}
+      {!connection.eventInfo && isEditing && (
         <Html
           position={[midpoint.x, midpoint.y, midpoint.z]}
           center
@@ -168,85 +190,63 @@ function MarkerConnector({
           }}
           zIndexRange={[100, 0]}
         >
-          {isEditing ? (
-            <div
+          <div
+            style={{
+              display: 'flex',
+              gap: '4px',
+              alignItems: 'center',
+            }}
+          >
+            <input
+              type="text"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              autoFocus
+              placeholder="输入标签..."
               style={{
-                display: 'flex',
-                gap: '4px',
-                alignItems: 'center',
-              }}
-            >
-              <input
-                type="text"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                autoFocus
-                style={{
-                  background: 'rgba(0, 0, 0, 0.9)',
-                  color: 'white',
-                  border: '1px solid #00ffff',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  outline: 'none',
-                  minWidth: '100px',
-                }}
-              />
-              <button
-                onClick={handleSave}
-                style={{
-                  background: '#00ffff',
-                  color: 'black',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                ✓
-              </button>
-              <button
-                onClick={handleCancel}
-                style={{
-                  background: '#ff4444',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          ) : (
-            <div
-              onDoubleClick={handleDoubleClick}
-              style={{
-                background: label ? 'rgba(0, 255, 255, 0.9)' : 'rgba(0, 255, 255, 0.3)',
-                color: 'black',
-                padding: '4px 8px',
+                background: 'rgba(0, 0, 0, 0.9)',
+                color: 'white',
+                border: '1px solid #00ffff',
                 borderRadius: '4px',
+                padding: '4px 8px',
                 fontSize: '11px',
                 fontWeight: '500',
-                whiteSpace: 'nowrap',
-                cursor: 'pointer',
-                border: '1px solid rgba(0, 255, 255, 0.5)',
-                userSelect: 'none',
-                minWidth: label ? 'auto' : '60px',
-                textAlign: 'center',
+                outline: 'none',
+                minWidth: '100px',
               }}
-              title="双击编辑"
+            />
+            <button
+              onClick={handleSave}
+              style={{
+                background: '#00ffff',
+                color: 'black',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                fontSize: '11px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
             >
-              {label || '双击添加'}
-            </div>
-          )}
+              ✓
+            </button>
+            <button
+              onClick={handleCancel}
+              style={{
+                background: '#ff4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                fontSize: '11px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              ✕
+            </button>
+          </div>
         </Html>
       )}
 
