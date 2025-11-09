@@ -1,3 +1,4 @@
+import { useState, memo } from 'react'
 import { CustomMarker } from '../types/customMarker'
 import './AnchoredEventPanel.css'
 
@@ -14,23 +15,49 @@ interface AnchoredEventPanelProps {
   onEdit: (marker: CustomMarker) => void
 }
 
+const COLLAPSE_THRESHOLD = 8 // 超过8个事件时自动收缩
+
 /**
- * 侧边锚定事件面板
+ * 侧边锚定事件面板（性能优化+折叠功能）
  * - 固定在屏幕左侧或右侧
  * - 显示激活的事件卡片列表
- * - 支持垂直滚动
+ * - 超过8个事件时自动收缩，可展开
+ * - 使用 React.memo 优化性能
  */
-function AnchoredEventPanel({ events, side, onClose, onEdit }: AnchoredEventPanelProps) {
+const AnchoredEventPanel = memo(function AnchoredEventPanel({
+  events,
+  side,
+  onClose,
+  onEdit
+}: AnchoredEventPanelProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
   const sideEvents = events.filter(e => e.side === side)
 
   if (sideEvents.length === 0) {
     return null
   }
 
+  const shouldCollapse = sideEvents.length > COLLAPSE_THRESHOLD
+  const displayEvents = (shouldCollapse && !isExpanded)
+    ? sideEvents.slice(0, 3) // 收缩时只显示前3个
+    : sideEvents
+
   return (
-    <div className={`anchored-event-panel anchored-event-panel-${side}`}>
+    <div className={`anchored-event-panel anchored-event-panel-${side} ${shouldCollapse && !isExpanded ? 'collapsed' : ''}`}>
+      {/* 折叠/展开按钮 */}
+      {shouldCollapse && (
+        <button
+          className="panel-toggle-btn"
+          onClick={() => setIsExpanded(!isExpanded)}
+          title={isExpanded ? '收起' : '展开更多'}
+        >
+          {isExpanded ? '−' : '+'}
+          <span className="event-count">{sideEvents.length}</span>
+        </button>
+      )}
+
       <div className="anchored-event-panel-scroll">
-        {sideEvents.map((event) => (
+        {displayEvents.map((event) => (
           <div
             key={event.id}
             className="event-card"
@@ -104,9 +131,16 @@ function AnchoredEventPanel({ events, side, onClose, onEdit }: AnchoredEventPane
             <div className="event-card-anchor" data-anchor-id={event.id}></div>
           </div>
         ))}
+
+        {/* 收缩状态提示 */}
+        {shouldCollapse && !isExpanded && (
+          <div className="collapse-hint">
+            还有 {sideEvents.length - 3} 个事件...
+          </div>
+        )}
       </div>
     </div>
   )
-}
+})
 
 export default AnchoredEventPanel

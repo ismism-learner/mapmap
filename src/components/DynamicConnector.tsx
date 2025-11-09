@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import './DynamicConnector.css'
 
 export interface ConnectorLine {
@@ -14,11 +15,11 @@ interface DynamicConnectorProps {
 }
 
 /**
- * 动态连接线 SVG 覆盖层
+ * 动态连接线 SVG 覆盖层（性能优化版）
  * - 在事件卡片和图钉之间绘制连接线
- * - 线条数据由 Scene 组件计算并传入
+ * - 使用 React.memo 避免不必要的重渲染
  */
-function DynamicConnector({ lines }: DynamicConnectorProps) {
+const DynamicConnector = memo(function DynamicConnector({ lines }: DynamicConnectorProps) {
   if (lines.length === 0) {
     return null
   }
@@ -80,6 +81,6 @@ function DynamicConnector({ lines }: DynamicConnectorProps) {
       )}
     </svg>
   )
-}
+})
 
 export default DynamicConnector

@@ -1,4 +1,5 @@
 import { useFrame, useThree } from '@react-three/fiber'
+import { useRef } from 'react'
 import { Vector3 } from 'three'
 import { AnchoredEvent } from './AnchoredEventPanel'
 import { ConnectorLine } from './DynamicConnector'
@@ -14,10 +15,10 @@ interface ConnectorCalculatorProps {
 }
 
 /**
- * 连接线坐标计算器
- * - 在 Scene 内部运行，每帧计算连接线坐标
- * - 将 3D 坐标投影到 2D 屏幕坐标
- * - 通过回调函数传递给外部组件
+ * 连接线坐标计算器（性能优化版）
+ * - 每3帧更新一次，减少计算频率
+ * - 缓存DOM查询结果
+ * - 坐标差异检测，只在变化超过阈值时更新
  */
 function ConnectorCalculator({
   events,
@@ -28,19 +29,36 @@ function ConnectorCalculator({
   mapHeight = 2,
 }: ConnectorCalculatorProps) {
   const { camera, size } = useThree()
+  const frameCountRef = useRef(0)
+  const lastLinesRef = useRef<ConnectorLine[]>([])
+  const anchorCacheRef = useRef<Map<string, HTMLElement>>(new Map())
 
   useFrame(() => {
+    // 帧节流：每3帧更新一次
+    frameCountRef.current++
+    if (frameCountRef.current % 3 !== 0) {
+      return
+    }
+
     if (events.length === 0) {
-      onUpdate([])
+      if (lastLinesRef.current.length > 0) {
+        onUpdate([])
+        lastLinesRef.current = []
+      }
       return
     }
 
     const newLines: ConnectorLine[] = []
 
     events.forEach((event) => {
-      // 获取卡片锚点的 DOM 元素
-      const anchorElement = document.querySelector(`[data-anchor-id="${event.id}"]`)
-      if (!anchorElement) return
+      // 从缓存获取或查询锚点元素
+      let anchorElement = anchorCacheRef.current.get(event.id)
+      if (!anchorElement) {
+        const element = document.querySelector(`[data-anchor-id="${event.id}"]`) as HTMLElement
+        if (!element) return
+        anchorCacheRef.current.set(event.id, element)
+        anchorElement = element
+      }
 
       // 获取锚点的屏幕坐标
       const anchorRect = anchorElement.getBoundingClientRect()
@@ -75,21 +93,16 @@ function ConnectorCalculator({
       const endY = (-(projected.y * 0.5) + 0.5) * size.height
 
       // 检查图钉是否在视口内且可见
-      // z < 1 表示在相机前方，z > -1 表示在近裁剪面之后
-      const visible = projected.z < 1 && projected.z > -1
+      let visible = projected.z < 1 && projected.z > -1
 
       // 在球形模式下，还需要检查是否在地球背面
       if (!isFlatMode && visible) {
-        // 计算法线向量（从地球中心指向图钉）
         const normal = markerPos.clone().normalize()
-        // 计算从图钉到相机的方向
         const toCamera = camera.position.clone().sub(markerPos).normalize()
-        // 点积 > 0 表示面向相机
         const facingCamera = normal.dot(toCamera) > 0.1
 
         if (!facingCamera) {
-          // 在背面，不显示连接线
-          return
+          visible = false
         }
       }
 
@@ -103,7 +116,43 @@ function ConnectorCalculator({
       })
     })
 
-    onUpdate(newLines)
+    // 坐标差异检测：只在变化超过阈值时更新
+    let shouldUpdate = lastLinesRef.current.length !== newLines.length
+
+    if (!shouldUpdate) {
+      for (let i = 0; i < newLines.length; i++) {
+        const oldLine = lastLinesRef.current[i]
+        const newLine = newLines[i]
+
+        if (!oldLine ||
+            oldLine.eventId !== newLine.eventId ||
+            oldLine.visible !== newLine.visible ||
+            Math.abs(oldLine.startX - newLine.startX) > 2 ||
+            Math.abs(oldLine.startY - newLine.startY) > 2 ||
+            Math.abs(oldLine.endX - newLine.endX) > 2 ||
+            Math.abs(oldLine.endY - newLine.endY) > 2) {
+          shouldUpdate = true
+          break
+        }
+      }
+    }
+
+    if (shouldUpdate) {
+      onUpdate(newLines)
+      lastLinesRef.current = newLines
+    }
+  })
+
+  // 清理缓存
+  useFrame(() => {
+    const currentEventIds = new Set(events.map(e => e.id))
+    const cachedIds = Array.from(anchorCacheRef.current.keys())
+
+    cachedIds.forEach(id => {
+      if (!currentEventIds.has(id)) {
+        anchorCacheRef.current.delete(id)
+      }
+    })
   })
 
   return null
