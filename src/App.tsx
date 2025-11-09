@@ -17,6 +17,7 @@ import {
   generateId
 } from './types/customMarker'
 import { parseEventText, geocodeEvents } from './utils/eventParser'
+import { loadCountries } from './utils/translationUtils'
 import './App.css'
 
 function App() {
@@ -83,6 +84,11 @@ function App() {
       console.log(`✅ Loaded ${textureList.length} textures`)
     }
     loadTextureList()
+  }, [])
+
+  // 预加载国家数据（用于中文翻译）
+  useEffect(() => {
+    loadCountries() // 预加载，后续搜索时直接使用缓存
   }, [])
 
   // 切换图层显示状态
@@ -237,7 +243,7 @@ function App() {
   }
 
   // 批量创建事件
-  const handleCreateEvents = (eventText: string) => {
+  const handleCreateEvents = async (eventText: string) => {
     console.log('📝 开始批量创建事件...')
 
     // 解析事件文本
@@ -249,8 +255,11 @@ function App() {
 
     console.log(`📊 解析到 ${events.length} 个事件`)
 
-    // 地理编码
-    const { markers: geocodedMarkers, connections: geocodedConnections } = geocodeEvents(events, cities)
+    // 地理编码（支持中文地名）
+    const { markers: geocodedMarkers, connections: geocodedConnections } = await geocodeEvents(
+      events,
+      cities
+    )
 
     console.log(`📍 地理编码结果: ${geocodedMarkers.length} 个标记, ${geocodedConnections.length} 个连接`)
 
@@ -349,7 +358,7 @@ function App() {
         />
       </Canvas>
 
-      {/* 搜索栏 */}
+      {/* 搜索栏 - 支持中文搜索 */}
       <SearchBar cities={cities} onSelectCity={handleSelectCity} />
 
       {/* 左上角信息 */}

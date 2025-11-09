@@ -1,3 +1,5 @@
+import { smartTranslate, containsChinese } from './translationUtils'
+
 export interface City {
   id: number
   name: string
@@ -31,14 +33,23 @@ export async function loadCities(): Promise<City[]> {
 }
 
 /**
- * 搜索城市（支持国家名和城市名）
+ * 搜索城市（支持国家名和城市名，支持中文）
  */
-export function searchCities(cities: City[], query: string): City[] {
+export async function searchCities(cities: City[], query: string): Promise<City[]> {
   if (!query || query.trim() === '') {
     return []
   }
 
-  const lowerQuery = query.toLowerCase().trim()
+  let searchQuery = query.trim()
+
+  // 如果包含中文，翻译为英文
+  if (containsChinese(searchQuery)) {
+    const translated = await smartTranslate(searchQuery)
+    console.log(`🔍 搜索翻译: "${searchQuery}" -> "${translated}"`)
+    searchQuery = translated
+  }
+
+  const lowerQuery = searchQuery.toLowerCase()
 
   return cities.filter(city =>
     city.name.toLowerCase().includes(lowerQuery) ||

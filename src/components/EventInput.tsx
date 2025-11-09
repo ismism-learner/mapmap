@@ -34,9 +34,9 @@ function EventInput({ onCreateEvents }: EventInputProps) {
   }
 
   const handleExample = () => {
-    const example = `2023-01-01;国事访问;美国,San Francisco;会见;中国,Beijing
-2024-03-15;经贸合作;Germany,Berlin;协议;Japan,Tokyo
-;2024-05-20;科技峰会;美国,San Francisco;发布新AI模型`
+    const example = `2023-01-01;国事访问;美国,San Francisco;会见;中国,北京
+2024-03-15;经贸合作;德国,Berlin;协议;日本,Tokyo
+;2024-05-20;科技峰会;中国,上海;发布新AI模型`
     setText(example)
   }
 
