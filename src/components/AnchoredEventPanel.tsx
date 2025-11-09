@@ -17,13 +17,11 @@ interface AnchoredEventPanelProps {
   onEdit: (marker: CustomMarker) => void
 }
 
-const COLLAPSE_THRESHOLD = 8 // 超过8个事件时自动收缩
-
 /**
- * 侧边锚定事件面板（性能优化+折叠功能）
+ * 侧边锚定事件面板（性能优化+单卡折叠功能）
  * - 固定在屏幕左侧或右侧
  * - 显示激活的事件卡片列表
- * - 超过8个事件时自动收缩，可展开
+ * - 每个卡片可独立收起/展开
  * - 使用 React.memo 优化性能
  */
 const AnchoredEventPanel = memo(function AnchoredEventPanel({
@@ -33,56 +31,78 @@ const AnchoredEventPanel = memo(function AnchoredEventPanel({
   onClose,
   onEdit
 }: AnchoredEventPanelProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  // 管理每个事件卡的收起/展开状态（默认全部展开）
+  const [collapsedCards, setCollapsedCards] = useState<Set<string>>(new Set())
+
   const sideEvents = events.filter(e => e.side === side)
 
   if (sideEvents.length === 0) {
     return null
   }
 
-  const shouldCollapse = sideEvents.length > COLLAPSE_THRESHOLD
-  const displayEvents = (shouldCollapse && !isExpanded)
-    ? sideEvents.slice(0, 3) // 收缩时只显示前3个
-    : sideEvents
+  // 切换单个卡片的收起/展开状态
+  const toggleCardCollapse = (eventId: string) => {
+    setCollapsedCards(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId)
+      } else {
+        newSet.add(eventId)
+      }
+      return newSet
+    })
+  }
 
   return (
-    <div className={`anchored-event-panel anchored-event-panel-${side} ${shouldCollapse && !isExpanded ? 'collapsed' : ''}`}>
-      {/* 折叠/展开按钮 */}
-      {shouldCollapse && (
-        <button
-          className="panel-toggle-btn"
-          onClick={() => setIsExpanded(!isExpanded)}
-          title={isExpanded ? '收起' : '展开更多'}
-        >
-          {isExpanded ? <MinusIcon size={20} /> : <PlusIcon size={20} />}
-          <span className="event-count">{sideEvents.length}</span>
-        </button>
-      )}
-
+    <div className={`anchored-event-panel anchored-event-panel-${side}`}>
       <div className="anchored-event-panel-scroll">
-        {displayEvents.map((event) => {
+        {sideEvents.map((event) => {
           // 从markers数组中查找最新的标记数据
           const marker = markers.find(m => m.id === event.markerId)
           if (!marker) return null  // 如果标记已被删除，不显示
 
+          const isCollapsed = collapsedCards.has(event.id)
+
           return (
             <div
               key={event.id}
-              className="event-card"
+              className={`event-card ${isCollapsed ? 'collapsed' : ''}`}
               data-event-id={event.id}
             >
               <div className="event-card-header">
                 <h3>{marker.info.title}</h3>
-                <button
-                  className="event-card-close"
-                  onClick={() => onClose(event.id)}
-                  title="关闭"
-                >
-                  <CloseIcon size={18} />
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    className="event-card-toggle"
+                    onClick={() => toggleCardCollapse(event.id)}
+                    title={isCollapsed ? '展开' : '收起'}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#00ffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '4px',
+                      transition: 'transform 0.2s'
+                    }}
+                  >
+                    {isCollapsed ? <PlusIcon size={18} /> : <MinusIcon size={18} />}
+                  </button>
+                  <button
+                    className="event-card-close"
+                    onClick={() => onClose(event.id)}
+                    title="关闭"
+                  >
+                    <CloseIcon size={18} />
+                  </button>
+                </div>
               </div>
 
-              <div className="event-card-content">
+              {/* 只在展开时显示内容 */}
+              {!isCollapsed && (
+                <div className="event-card-content">
                 {/* 描述文本（主要内容区） */}
                 {marker.info.description && (
                   <p className="event-description">{marker.info.description}</p>
@@ -91,14 +111,36 @@ const AnchoredEventPanel = memo(function AnchoredEventPanel({
                 {/* 图片展示 */}
                 {marker.info.images.length > 0 && (
                   <div className="event-images">
-                    {marker.info.images.slice(0, 3).map((img) => (
-                      <img
-                        key={img.id}
-                        src={img.url}
-                        alt={img.alt}
-                        className="event-image"
-                      />
-                    ))}
+                    {marker.info.images.slice(0, 3).map((img) => {
+                      // 确定跳转链接：优先B站视频，其次第一个链接
+                      const linkUrl = marker.info.videoInfo?.url || marker.info.links[0]?.url
+
+                      return linkUrl ? (
+                        <a
+                          key={img.id}
+                          href={linkUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ cursor: 'pointer', display: 'block' }}
+                        >
+                          <img
+                            src={img.url}
+                            alt={img.alt}
+                            className="event-image"
+                            style={{ transition: 'opacity 0.2s' }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                          />
+                        </a>
+                      ) : (
+                        <img
+                          key={img.id}
+                          src={img.url}
+                          alt={img.alt}
+                          className="event-image"
+                        />
+                      )
+                    })}
                   </div>
                 )}
 
@@ -143,20 +185,14 @@ const AnchoredEventPanel = memo(function AnchoredEventPanel({
                     <EditIcon size={16} />
                   </button>
                 </div>
-              </div>
+                </div>
+              )}
 
               {/* 锚点元素，用于连接线的起点 */}
               <div className="event-card-anchor" data-anchor-id={event.id}></div>
             </div>
           )
         })}
-
-        {/* 收缩状态提示 */}
-        {shouldCollapse && !isExpanded && (
-          <div className="collapse-hint">
-            还有 {sideEvents.length - 3} 个事件...
-          </div>
-        )}
       </div>
     </div>
   )

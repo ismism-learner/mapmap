@@ -286,8 +286,8 @@ function MarkerConnector({
         </Html>
       )}
 
-      {/* 只在悬停时显示标签（性能优化） */}
-      {!isEditing && hovered && (label || connection.eventInfo) && (
+      {/* 标签显示（用户输入的label一直显示，eventInfo只在悬停时显示） */}
+      {!isEditing && (label || (connection.eventInfo && hovered)) && (
         <Html
           position={[labelPosition.x, labelPosition.y, labelPosition.z]}
           center
@@ -303,23 +303,26 @@ function MarkerConnector({
         >
           <div
             style={{
-              background: 'rgba(0, 0, 0, 0.92)',
+              background: hovered ? 'rgba(0, 0, 0, 0.95)' : 'rgba(0, 0, 0, 0.85)',
               color: 'white',
               padding: connection.eventInfo ? '10px 14px' : '6px 12px',
               borderRadius: '8px',
               fontSize: connection.eventInfo ? '13px' : `${labelFontSize}px`,
               fontWeight: '500',
               whiteSpace: 'nowrap',
-              border: '2px solid #00ffff',
-              boxShadow: '0 4px 16px rgba(0, 255, 255, 0.3)',
+              border: hovered ? '2px solid #ffff00' : '2px solid #00ffff',
+              boxShadow: hovered
+                ? '0 6px 20px rgba(255, 255, 0, 0.4)'
+                : '0 4px 16px rgba(0, 255, 255, 0.3)',
               maxWidth: '280px',
               transition: 'all 0.2s',
               userSelect: 'none',
+              transform: hovered ? 'scale(1.05)' : 'scale(1)',
             }}
           >
             {connection.eventInfo ? (
               <>
-                <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#00ffff', fontSize: '13px' }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '6px', color: hovered ? '#ffff00' : '#00ffff', fontSize: '13px' }}>
                   {connection.eventInfo.eventName}
                 </div>
                 <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>
