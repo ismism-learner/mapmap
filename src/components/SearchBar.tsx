@@ -131,7 +131,7 @@ function SearchBar({ cities, onSelectCity }: SearchBarProps) {
             >
               <div className="result-city-name">{city.name}</div>
               <div className="result-location">
-                {city.state_name}, {city.country_name}
+                {city.isCountry ? '国家' : `${city.state_name}, ${city.country_name}`}
               </div>
             </div>
           ))}

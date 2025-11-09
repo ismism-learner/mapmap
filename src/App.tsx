@@ -746,12 +746,6 @@ function App() {
       {/* 搜索栏 - 支持中文搜索 */}
       <SearchBar cities={cities} onSelectCity={handleSelectCity} />
 
-      {/* 左上角信息 */}
-      <div className="info">
-        <h1>MapMap - 3D 地球</h1>
-        <p>{isFlatMode ? '鼠标拖动平移' : '鼠标拖动旋转'} | 滚轮缩放 | 双击放置图钉</p>
-      </div>
-
       {/* 统一工具栏 - 仅管理员模式 */}
       {isAdminMode && (
         <UnifiedToolbar
