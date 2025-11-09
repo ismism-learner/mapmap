@@ -211,8 +211,16 @@ function MarkerConnector({
           e.stopPropagation()
           setHovered(false)
         }}
+        onClick={(e) => {
+          // 阻止单击事件冒泡，避免干扰双击检测
+          e.stopPropagation()
+        }}
         onDoubleClick={(e) => {
           e.stopPropagation()
+          // 同时阻止默认行为，确保事件不会继续传播
+          if (e.nativeEvent) {
+            e.nativeEvent.stopImmediatePropagation()
+          }
           if (!connection.eventInfo) {
             handleLineDoubleClick()
           }
