@@ -131,7 +131,15 @@ function EditableInfoPanel({
             title || '未命名标记'
           )}
         </h3>
-        <button className="close-btn" onClick={onClose}>×</button>
+        <button
+          className="close-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            onClose()
+          }}
+        >
+          ×
+        </button>
       </div>
 
       <div className="panel-content">

@@ -99,7 +99,7 @@ function Pushpin({
           alignItems: 'center',
           transform: hovered ? 'scale(1.2)' : 'scale(1)',
           transition: 'transform 0.2s',
-          pointerEvents: 'none',
+          pointerEvents: 'auto',
         }}
       >
         {/* SVG图钉 */}
