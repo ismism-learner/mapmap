@@ -152,6 +152,9 @@ function InteractiveBoundary({
   const handleClick = (feature: BoundaryFeature) => {
     console.log(`🖱️ 点击国家: ${feature.name}`, feature.center)
 
+    // 立即清除悬停高亮状态
+    setHoveredId(null)
+
     // 如果在上色模式，执行上色操作
     if (paintMode && onCountryPaint) {
       onCountryPaint(feature.id, selectedColor)
