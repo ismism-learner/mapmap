@@ -7,6 +7,7 @@ import InfoCard from './components/InfoCard'
 import EditableInfoPanel from './components/EditableInfoPanel'
 import ModeToggle from './components/ModeToggle'
 import UnfoldTransition from './components/UnfoldTransition'
+import EventInput from './components/EventInput'
 import { City, loadCities } from './utils/cityUtils'
 import { TextureConfig, loadTextures } from './types/texture'
 import {
@@ -15,6 +16,7 @@ import {
   MarkerInfo,
   generateId
 } from './types/customMarker'
+import { parseEventText, geocodeEvents } from './utils/eventParser'
 import './App.css'
 
 function App() {
@@ -234,6 +236,96 @@ function App() {
     }
   }
 
+  // 批量创建事件
+  const handleCreateEvents = (eventText: string) => {
+    console.log('📝 开始批量创建事件...')
+
+    // 解析事件文本
+    const events = parseEventText(eventText)
+    if (events.length === 0) {
+      console.warn('⚠️ 没有解析到任何事件')
+      return
+    }
+
+    console.log(`📊 解析到 ${events.length} 个事件`)
+
+    // 地理编码
+    const { markers: geocodedMarkers, connections: geocodedConnections } = geocodeEvents(events, cities)
+
+    console.log(`📍 地理编码结果: ${geocodedMarkers.length} 个标记, ${geocodedConnections.length} 个连接`)
+
+    // 创建标记（从独立图钉）
+    const newMarkers: CustomMarker[] = geocodedMarkers.map(gm => ({
+      id: generateId(),
+      latitude: gm.latitude,
+      longitude: gm.longitude,
+      info: {
+        title: gm.title,
+        description: gm.description,
+        links: [],
+        images: []
+      },
+      createdAt: Date.now()
+    }))
+
+    // 创建连接线的标记
+    const connectionMarkerMap = new Map<string, CustomMarker>()
+
+    const newConnections: MarkerConnection[] = geocodedConnections.map(gc => {
+      // 为每个连接的端点创建或复用标记
+      const key1 = `${gc.marker1.latitude},${gc.marker1.longitude}`
+      const key2 = `${gc.marker2.latitude},${gc.marker2.longitude}`
+
+      if (!connectionMarkerMap.has(key1)) {
+        connectionMarkerMap.set(key1, {
+          id: generateId(),
+          latitude: gc.marker1.latitude,
+          longitude: gc.marker1.longitude,
+          info: {
+            title: gc.marker1.title,
+            description: gc.marker1.description,
+            links: [],
+            images: []
+          },
+          createdAt: Date.now()
+        })
+      }
+
+      if (!connectionMarkerMap.has(key2)) {
+        connectionMarkerMap.set(key2, {
+          id: generateId(),
+          latitude: gc.marker2.latitude,
+          longitude: gc.marker2.longitude,
+          info: {
+            title: gc.marker2.title,
+            description: gc.marker2.description,
+            links: [],
+            images: []
+          },
+          createdAt: Date.now()
+        })
+      }
+
+      const marker1 = connectionMarkerMap.get(key1)!
+      const marker2 = connectionMarkerMap.get(key2)!
+
+      return {
+        id: generateId(),
+        fromMarkerId: marker1.id,
+        toMarkerId: marker2.id
+      }
+    })
+
+    // 合并所有标记
+    const allNewMarkers = [...newMarkers, ...Array.from(connectionMarkerMap.values())]
+
+    // 添加到状态
+    setCustomMarkers(prev => [...prev, ...allNewMarkers])
+    setConnections(prev => [...prev, ...newConnections])
+
+    console.log(`✅ 成功创建 ${allNewMarkers.length} 个标记和 ${newConnections.length} 个连接`)
+  }
+
   // 获取当前选中的底图路径
   const currentTexturePath = textures.find(t => t.id === selectedTexture)?.path
 
@@ -300,6 +392,9 @@ function App() {
         onToggleManualConnect={handleToggleManualConnect}
         hasSelectedMarker={!!firstMarkerForConnect}
       />
+
+      {/* 批量事件创建 */}
+      <EventInput onCreateEvents={handleCreateEvents} />
 
       {/* 球形展开/收缩过渡效果 */}
       <UnfoldTransition
