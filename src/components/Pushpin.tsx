@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Group } from 'three'
+import { Group, Mesh } from 'three'
 import { Html } from '@react-three/drei'
 import { lonLatToVector3 } from '../utils/geoUtils'
 
@@ -10,6 +10,7 @@ interface PushpinProps {
   onClick?: () => void
   radius?: number
   color?: string
+  globeRef?: React.RefObject<Mesh>
 }
 
 /**
@@ -24,7 +25,8 @@ function Pushpin({
   label,
   onClick,
   radius = 1.01,
-  color = '#ff4444'
+  color = '#ff4444',
+  globeRef
 }: PushpinProps) {
   const groupRef = useRef<Group>(null)
   const [hovered, setHovered] = useState(false)
@@ -86,19 +88,28 @@ function Pushpin({
 
       {/* 悬停或有标签时显示 */}
       {(hovered || label) && label && (
-        <Html distanceFactor={0.5} position={[0, 0.025, 0]} center>
+        <Html
+          position={[0, 0.025, 0]}
+          center
+          occlude={globeRef ? [globeRef] : undefined}
+          style={{
+            transition: 'opacity 0.2s',
+            pointerEvents: 'none',
+          }}
+        >
           <div
             style={{
               background: 'rgba(0, 0, 0, 0.85)',
               color: 'white',
-              padding: '6px 10px',
-              borderRadius: '6px',
-              fontSize: '13px',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '11px',
               fontWeight: '500',
               whiteSpace: 'nowrap',
               pointerEvents: 'none',
               boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
               border: '1px solid rgba(255,255,255,0.2)',
+              transform: 'scale(1)',
             }}
           >
             {label}

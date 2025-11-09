@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './LayerControl.css'
+import { TextureConfig } from '../types/texture'
 
 export interface LayerConfig {
   id: string
@@ -12,14 +13,29 @@ export interface LayerConfig {
 interface LayerControlProps {
   layers: LayerConfig[]
   onLayerToggle: (layerId: string) => void
+  realisticLighting?: boolean
+  onLightingToggle?: () => void
+  textures?: TextureConfig[]
+  selectedTexture?: string
+  onTextureChange?: (textureId: string) => void
 }
 
 /**
  * 图层控制面板
  * - 显示所有可用的边界线图层
  * - 允许用户切换图层的显示/隐藏
+ * - 控制光照模式
+ * - 选择地球底图
  */
-function LayerControl({ layers, onLayerToggle }: LayerControlProps) {
+function LayerControl({
+  layers,
+  onLayerToggle,
+  realisticLighting = false,
+  onLightingToggle,
+  textures = [],
+  selectedTexture,
+  onTextureChange
+}: LayerControlProps) {
   const [isOpen, setIsOpen] = useState(true)
 
   return (
@@ -47,6 +63,48 @@ function LayerControl({ layers, onLayerToggle }: LayerControlProps) {
               </label>
             </div>
           ))}
+
+          {/* 底图选择器 */}
+          {textures.length > 0 && onTextureChange && (
+            <>
+              <div className="layer-divider" />
+              <div className="texture-selector">
+                <label className="texture-label">
+                  <span className="layer-icon">🗺️</span>
+                  <span>地球底图</span>
+                </label>
+                <select
+                  className="texture-select"
+                  value={selectedTexture}
+                  onChange={(e) => onTextureChange(e.target.value)}
+                >
+                  {textures.map((texture) => (
+                    <option key={texture.id} value={texture.id}>
+                      {texture.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          {/* 光照模式切换 */}
+          {onLightingToggle && (
+            <>
+              <div className="layer-divider" />
+              <div className="layer-item">
+                <label className="layer-label">
+                  <input
+                    type="checkbox"
+                    checked={realisticLighting}
+                    onChange={onLightingToggle}
+                  />
+                  <span className="layer-icon">💡</span>
+                  <span className="layer-name">真实光照</span>
+                </label>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

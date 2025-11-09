@@ -5,8 +5,9 @@ import LayerControl, { LayerConfig } from './components/LayerControl'
 import SearchBar from './components/SearchBar'
 import InfoCard from './components/InfoCard'
 import EditableInfoPanel from './components/EditableInfoPanel'
-import ConnectModeToggle from './components/ConnectModeToggle'
+import ModeToggle from './components/ModeToggle'
 import { City, loadCities } from './utils/cityUtils'
+import { TextureConfig, loadTextures } from './types/texture'
 import {
   CustomMarker,
   MarkerConnection,
@@ -38,9 +39,17 @@ function App() {
   const [selectedMarker, setSelectedMarker] = useState<CustomMarker | null>(null)
   const [lastMarker, setLastMarker] = useState<CustomMarker | null>(null)
 
-  // 连接模式
-  const [isConnectMode, setIsConnectMode] = useState(false)
+  // 模式控制
+  const [autoConnect, setAutoConnect] = useState(true) // 自动连接模式（默认开启）
+  const [manualConnectMode, setManualConnectMode] = useState(false) // 手动连接模式
   const [firstMarkerForConnect, setFirstMarkerForConnect] = useState<CustomMarker | null>(null)
+
+  // 光照模式
+  const [realisticLighting, setRealisticLighting] = useState(false) // 真实光照模式（默认关闭）
+
+  // 底图管理
+  const [textures, setTextures] = useState<TextureConfig[]>([])
+  const [selectedTexture, setSelectedTexture] = useState<string>('earth_hq')
 
   const [flyToCity, setFlyToCity] = useState<{ lon: number; lat: number } | null>(null)
 
@@ -52,6 +61,16 @@ function App() {
       console.log(`✅ Loaded ${citiesData.length} cities for search`)
     }
     loadData()
+  }, [])
+
+  // 加载底图列表
+  useEffect(() => {
+    const loadTextureList = async () => {
+      const textureList = await loadTextures()
+      setTextures(textureList)
+      console.log(`✅ Loaded ${textureList.length} textures`)
+    }
+    loadTextureList()
   }, [])
 
   // 切换图层显示状态
@@ -100,8 +119,8 @@ function App() {
 
     setCustomMarkers((prev) => [...prev, newMarker])
 
-    // 如果有上一个标记，创建连接线
-    if (lastMarker) {
+    // 只有在自动连接模式开启时，才自动创建连接线
+    if (autoConnect && lastMarker) {
       const newConnection: MarkerConnection = {
         id: generateId(),
         fromMarkerId: lastMarker.id,
@@ -110,6 +129,7 @@ function App() {
       setConnections((prev) => [...prev, newConnection])
     }
 
+    // 更新最后一个标记（用于自动连接）
     setLastMarker(newMarker)
     setSelectedMarker(newMarker)
 
@@ -120,8 +140,8 @@ function App() {
 
   // 点击自定义标记
   const handleClickMarker = (marker: CustomMarker) => {
-    // 如果在连接模式下
-    if (isConnectMode) {
+    // 如果在手动连接模式下
+    if (manualConnectMode) {
       if (!firstMarkerForConnect) {
         // 选择第一个图钉
         setFirstMarkerForConnect(marker)
@@ -190,14 +210,26 @@ function App() {
     setSelectedMarker(null)
   }
 
-  // 切换连接模式
-  const handleToggleConnectMode = () => {
-    setIsConnectMode(!isConnectMode)
-    setFirstMarkerForConnect(null) // 重置选择
-    if (isConnectMode) {
-      setSelectedMarker(null) // 退出连接模式时关闭信息面板
+  // 切换自动连接模式
+  const handleToggleAutoConnect = () => {
+    setAutoConnect(!autoConnect)
+    // 关闭自动连接时，清除最后一个标记
+    if (autoConnect) {
+      setLastMarker(null)
     }
   }
+
+  // 切换手动连接模式
+  const handleToggleManualConnect = () => {
+    setManualConnectMode(!manualConnectMode)
+    setFirstMarkerForConnect(null) // 重置选择
+    if (manualConnectMode) {
+      setSelectedMarker(null) // 退出手动连接模式时关闭信息面板
+    }
+  }
+
+  // 获取当前选中的底图路径
+  const currentTexturePath = textures.find(t => t.id === selectedTexture)?.path
 
   return (
     <div className="app">
@@ -211,8 +243,10 @@ function App() {
           onCustomMarkerClick={handleClickMarker}
           onDoubleClick={handleDoubleClick}
           flyToCity={flyToCity}
-          isConnectMode={isConnectMode}
+          manualConnectMode={manualConnectMode}
           selectedMarkerForConnect={firstMarkerForConnect}
+          realisticLighting={realisticLighting}
+          texturePath={currentTexturePath}
         />
       </Canvas>
 
@@ -226,13 +260,21 @@ function App() {
       </div>
 
       {/* 图层控制面板 */}
-      <LayerControl layers={layers} onLayerToggle={handleLayerToggle} />
+      <LayerControl
+        layers={layers}
+        onLayerToggle={handleLayerToggle}
+        realisticLighting={realisticLighting}
+        onLightingToggle={() => setRealisticLighting(!realisticLighting)}
+        textures={textures}
+        selectedTexture={selectedTexture}
+        onTextureChange={setSelectedTexture}
+      />
 
       {/* 城市信息卡片 */}
       <InfoCard city={selectedCity} onClose={() => setSelectedCity(null)} />
 
       {/* 自定义标记信息面板 */}
-      {selectedMarker && !isConnectMode && (
+      {selectedMarker && !manualConnectMode && (
         <EditableInfoPanel
           marker={selectedMarker}
           onSave={handleSaveMarkerInfo}
@@ -241,10 +283,12 @@ function App() {
         />
       )}
 
-      {/* 连接模式切换按钮 */}
-      <ConnectModeToggle
-        isActive={isConnectMode}
-        onToggle={handleToggleConnectMode}
+      {/* 模式切换按钮 */}
+      <ModeToggle
+        autoConnect={autoConnect}
+        onToggleAutoConnect={handleToggleAutoConnect}
+        manualConnectMode={manualConnectMode}
+        onToggleManualConnect={handleToggleManualConnect}
         hasSelectedMarker={!!firstMarkerForConnect}
       />
     </div>

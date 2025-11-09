@@ -75,3 +75,54 @@
   background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
 }
+
+.layer-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 8px 0;
+}
+
+.layer-icon {
+  font-size: 16px;
+  margin-right: 8px;
+}
+
+.texture-selector {
+  padding: 8px 5px;
+}
+
+.texture-label {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.texture-select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.texture-select:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.texture-select:focus {
+  outline: none;
+  border-color: rgba(77, 166, 255, 0.6);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.texture-select option {
+  background: rgba(30, 30, 40, 0.95);
+  color: white;
+}
