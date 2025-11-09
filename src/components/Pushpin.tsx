@@ -73,7 +73,9 @@ function Pushpin({
       style={{
         transition: 'opacity 0.2s',
         pointerEvents: 'auto',
+        zIndex: 100,
       }}
+      zIndexRange={[100, 0]}
     >
       <div
         onClick={handleClick}
