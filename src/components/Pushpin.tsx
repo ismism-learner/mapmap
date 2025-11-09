@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { Mesh } from 'three'
 import { Html } from '@react-three/drei'
 import { lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
@@ -44,13 +44,11 @@ function Pushpin({
   isFlat = false,
   mapWidth = 4,
   mapHeight = 2,
-  labelOffset = { x: 0, y: 0 },
-  onLabelDrag,
+  labelOffset: _labelOffset = { x: 0, y: 0 },
+  onLabelDrag: _onLabelDrag,
   videoInfo
 }: PushpinProps) {
   const [hovered, setHovered] = useState(false)
-  const [isDraggingLabel, setIsDraggingLabel] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
   // 根据模式计算位置
   const position = useMemo(() => {
@@ -77,45 +75,6 @@ function Pushpin({
       onClick()
     }
   }
-
-  // 标签拖动开始
-  const handleLabelMouseDown = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setIsDraggingLabel(true)
-    setDragStart({ x: e.clientX, y: e.clientY })
-  }
-
-  // 标签拖动中
-  const handleLabelMouseMove = (e: MouseEvent) => {
-    if (!isDraggingLabel || !onLabelDrag) return
-
-    const deltaX = e.clientX - dragStart.x
-    const deltaY = e.clientY - dragStart.y
-
-    onLabelDrag({
-      x: labelOffset.x + deltaX,
-      y: labelOffset.y + deltaY
-    })
-
-    setDragStart({ x: e.clientX, y: e.clientY })
-  }
-
-  // 标签拖动结束
-  const handleLabelMouseUp = () => {
-    setIsDraggingLabel(false)
-  }
-
-  // 监听全局鼠标事件（拖动标签时）
-  useEffect(() => {
-    if (isDraggingLabel) {
-      window.addEventListener('mousemove', handleLabelMouseMove)
-      window.addEventListener('mouseup', handleLabelMouseUp)
-      return () => {
-        window.removeEventListener('mousemove', handleLabelMouseMove)
-        window.removeEventListener('mouseup', handleLabelMouseUp)
-      }
-    }
-  }, [isDraggingLabel, dragStart, labelOffset])
 
   const svgSize = (pinConfig.outerRadius + pinConfig.strokeWidth) * 2
 
@@ -175,8 +134,8 @@ function Pushpin({
           />
         </svg>
 
-        {/* 视频封面 - 优先显示，可点击跳转 */}
-        {videoInfo && (
+        {/* 视频封面 - 悬停时显示，可点击跳转 */}
+        {videoInfo && hovered && (
           <a
             href={videoInfo.url}
             target="_blank"
@@ -189,10 +148,9 @@ function Pushpin({
               marginTop: '8px',
               pointerEvents: 'auto',
               cursor: 'pointer',
-              transform: `translate(${labelOffset.x}px, ${labelOffset.y}px)`,
               textDecoration: 'none',
               display: 'block',
-              transition: isDraggingLabel ? 'none' : 'transform 0.2s',
+              transition: 'transform 0.2s',
             }}
           >
             <div
@@ -257,10 +215,9 @@ function Pushpin({
           </a>
         )}
 
-        {/* 标签 - 当没有视频时显示，可拖动 */}
-        {!videoInfo && label && (
+        {/* 标签 - 当没有视频时，悬停显示 */}
+        {!videoInfo && label && hovered && (
           <div
-            onMouseDown={handleLabelMouseDown}
             style={{
               background: 'rgba(0, 0, 0, 0.85)',
               color: 'white',
@@ -272,12 +229,9 @@ function Pushpin({
               marginTop: '4px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
               border: '1px solid rgba(255,255,255,0.2)',
-              pointerEvents: 'auto',
-              cursor: isDraggingLabel ? 'grabbing' : 'grab',
-              transform: `translate(${labelOffset.x}px, ${labelOffset.y}px)`,
+              pointerEvents: 'none',
               userSelect: 'none',
-              opacity: hovered || isDraggingLabel ? 1 : 0.8,
-              transition: isDraggingLabel ? 'none' : 'opacity 0.2s',
+              transition: 'opacity 0.2s',
             }}
           >
             {label}
