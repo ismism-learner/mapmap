@@ -16,6 +16,13 @@ interface PushpinProps {
   mapHeight?: number
   labelOffset?: { x: number; y: number } // 标签偏移位置
   onLabelDrag?: (offset: { x: number; y: number }) => void // 标签拖动回调
+  videoInfo?: {
+    bvid: string
+    title: string
+    cover: string
+    author: string
+    url: string
+  } // B站视频信息
 }
 
 /**
@@ -38,7 +45,8 @@ function Pushpin({
   mapWidth = 4,
   mapHeight = 2,
   labelOffset = { x: 0, y: 0 },
-  onLabelDrag
+  onLabelDrag,
+  videoInfo
 }: PushpinProps) {
   const [hovered, setHovered] = useState(false)
   const [isDraggingLabel, setIsDraggingLabel] = useState(false)
@@ -167,8 +175,90 @@ function Pushpin({
           />
         </svg>
 
-        {/* 标签 - 始终显示，可拖动 */}
-        {label && (
+        {/* 视频封面 - 优先显示，可点击跳转 */}
+        {videoInfo && (
+          <a
+            href={videoInfo.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onMouseDown={(e) => {
+              // 如果点击封面，打开链接而不是拖动
+              e.stopPropagation()
+            }}
+            style={{
+              marginTop: '8px',
+              pointerEvents: 'auto',
+              cursor: 'pointer',
+              transform: `translate(${labelOffset.x}px, ${labelOffset.y}px)`,
+              textDecoration: 'none',
+              display: 'block',
+              transition: isDraggingLabel ? 'none' : 'transform 0.2s',
+            }}
+          >
+            <div
+              style={{
+                background: 'rgba(0, 0, 0, 0.9)',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                border: '2px solid rgba(255,255,255,0.2)',
+                maxWidth: '200px',
+                transition: 'transform 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)'
+              }}
+            >
+              {/* 封面图 */}
+              <img
+                src={videoInfo.cover}
+                alt={videoInfo.title}
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  display: 'block',
+                }}
+              />
+              {/* 视频信息 */}
+              <div
+                style={{
+                  padding: '8px',
+                  color: 'white',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    marginBottom: '4px',
+                    lineHeight: '1.3',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                  }}
+                >
+                  {videoInfo.title}
+                </div>
+                <div
+                  style={{
+                    fontSize: '10px',
+                    color: 'rgba(255,255,255,0.7)',
+                  }}
+                >
+                  UP主: {videoInfo.author}
+                </div>
+              </div>
+            </div>
+          </a>
+        )}
+
+        {/* 标签 - 当没有视频时显示，可拖动 */}
+        {!videoInfo && label && (
           <div
             onMouseDown={handleLabelMouseDown}
             style={{
