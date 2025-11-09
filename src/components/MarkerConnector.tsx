@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
-import { Vector3, QuadraticBezierCurve3 } from 'three'
+import { useMemo, useState, useRef } from 'react'
+import { Vector3, QuadraticBezierCurve3, Mesh } from 'three'
 import { Line, Html } from '@react-three/drei'
+import { useFrame } from '@react-three/fiber'
 import { lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
 import { CustomMarker, MarkerConnection } from '../types/customMarker'
 
@@ -41,6 +42,8 @@ function MarkerConnector({
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(label)
   const [hovered, setHovered] = useState(false)
+  const arrowRef = useRef<Mesh>(null)
+  const progressRef = useRef(0)
 
   // 计算连线的点和中点
   const { points, midpoint } = useMemo(() => {
@@ -154,6 +157,33 @@ function MarkerConnector({
     }
   }
 
+  // 动画箭头沿着曲线移动
+  useFrame((_state, delta) => {
+    if (arrowRef.current && points.length > 1) {
+      // 更新进度（0到1循环）
+      progressRef.current += delta * 0.5 // 调整速度
+      if (progressRef.current > 1) {
+        progressRef.current = 0
+      }
+
+      // 计算箭头在曲线上的位置
+      const index = Math.floor(progressRef.current * (points.length - 1))
+      const nextIndex = Math.min(index + 1, points.length - 1)
+      const localProgress = (progressRef.current * (points.length - 1)) - index
+
+      const currentPoint = points[index]
+      const nextPoint = points[nextIndex]
+
+      // 线性插值获取当前位置
+      const position = new Vector3().lerpVectors(currentPoint, nextPoint, localProgress)
+      arrowRef.current.position.copy(position)
+
+      // 计算箭头方向（朝向下一个点）
+      const direction = new Vector3().subVectors(nextPoint, currentPoint).normalize()
+      arrowRef.current.lookAt(position.clone().add(direction))
+    }
+  })
+
   return (
     <group>
       <Line
@@ -177,6 +207,16 @@ function MarkerConnector({
           }
         }}
       />
+
+      {/* 动画箭头 - 雪佛龙形状 */}
+      <mesh ref={arrowRef}>
+        <coneGeometry args={[0.015, 0.04, 4]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.9}
+        />
+      </mesh>
 
       {/* 标签编辑（只在编辑时显示） */}
       {!connection.eventInfo && isEditing && (
