@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
-import { Mesh } from 'three'
+import { useState, useMemo, useRef } from 'react'
+import { Mesh, Vector3 } from 'three'
 import { Html } from '@react-three/drei'
+import { useThree, useFrame } from '@react-three/fiber'
 import { lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
 
 interface PushpinProps {
@@ -48,9 +49,12 @@ function Pushpin({
   labelOffset: _labelOffset = { x: 0, y: 0 },
   onLabelDrag: _onLabelDrag,
   videoInfo,
-  fontSize = 20
+  fontSize = 28
 }: PushpinProps) {
   const [hovered, setHovered] = useState(false)
+  const [labelOpacity, setLabelOpacity] = useState(1)
+  const { camera } = useThree()
+  const positionRef = useRef(new Vector3())
 
   // 根据模式计算位置
   const position = useMemo(() => {
@@ -62,6 +66,33 @@ function Pushpin({
   }, [isFlat, longitude, latitude, radius, mapWidth, mapHeight])
 
   const { x, y, z } = position
+
+  // 更新位置引用
+  useMemo(() => {
+    positionRef.current.set(x, y, z)
+  }, [x, y, z])
+
+  // 基于相机距离动态调整标签透明度
+  useFrame(() => {
+    const distance = camera.position.distanceTo(positionRef.current)
+
+    // 透明度渐变区间
+    const farThreshold = 3.5   // 距离大于此值时完全可见
+    const nearThreshold = 1.8  // 距离小于此值时完全透明
+
+    let opacity = 1
+    if (distance < nearThreshold) {
+      opacity = 0
+    } else if (distance < farThreshold) {
+      // 线性插值：从近到远，透明度从0到1
+      opacity = (distance - nearThreshold) / (farThreshold - nearThreshold)
+    }
+
+    // 只在变化较大时更新状态，避免频繁渲染
+    if (Math.abs(opacity - labelOpacity) > 0.01) {
+      setLabelOpacity(opacity)
+    }
+  })
 
   // 简化的SVG图钉配置
   const pinConfig = {
@@ -140,7 +171,7 @@ function Pushpin({
           />
         </svg>
 
-        {/* 标签 - 永久显示（无论是否有视频） */}
+        {/* 标签 - 基于相机距离动态调整透明度 */}
         {label && (
           <div
             style={{
@@ -156,6 +187,8 @@ function Pushpin({
               border: '1px solid rgba(255,255,255,0.2)',
               pointerEvents: 'none',
               userSelect: 'none',
+              opacity: labelOpacity,
+              transition: 'opacity 0.3s ease-out',
             }}
           >
             {label}
