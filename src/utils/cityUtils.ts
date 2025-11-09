@@ -1,4 +1,4 @@
-import { TranslationData, smartTranslate, containsChinese } from './translationUtils'
+import { smartTranslate, containsChinese } from './translationUtils'
 
 export interface City {
   id: number
@@ -35,16 +35,16 @@ export async function loadCities(): Promise<City[]> {
 /**
  * 搜索城市（支持国家名和城市名，支持中文）
  */
-export function searchCities(cities: City[], query: string, translations?: TranslationData): City[] {
+export async function searchCities(cities: City[], query: string): Promise<City[]> {
   if (!query || query.trim() === '') {
     return []
   }
 
   let searchQuery = query.trim()
 
-  // 如果包含中文且有翻译数据，尝试翻译为英文
-  if (containsChinese(searchQuery) && translations) {
-    const translated = smartTranslate(searchQuery, translations)
+  // 如果包含中文，翻译为英文
+  if (containsChinese(searchQuery)) {
+    const translated = await smartTranslate(searchQuery)
     console.log(`🔍 搜索翻译: "${searchQuery}" -> "${translated}"`)
     searchQuery = translated
   }

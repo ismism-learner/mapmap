@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { City, searchCities } from '../utils/cityUtils'
-import { TranslationData } from '../utils/translationUtils'
 import './SearchBar.css'
 
 interface SearchBarProps {
   cities: City[]
   onSelectCity: (city: City) => void
-  translations?: TranslationData | null
 }
 
 /**
@@ -14,8 +12,9 @@ interface SearchBarProps {
  * - 实时搜索城市
  * - 显示搜索结果
  * - 支持键盘导航
+ * - 支持中文搜索
  */
-function SearchBar({ cities, onSelectCity, translations }: SearchBarProps) {
+function SearchBar({ cities, onSelectCity }: SearchBarProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<City[]>([])
   const [showResults, setShowResults] = useState(false)
@@ -29,11 +28,21 @@ function SearchBar({ cities, onSelectCity, translations }: SearchBarProps) {
       return
     }
 
-    const searchResults = searchCities(cities, query, translations || undefined)
-    setResults(searchResults)
-    setShowResults(true)
-    setSelectedIndex(0)
-  }, [query, cities, translations])
+    // 异步搜索（支持中文翻译）
+    let isCancelled = false
+
+    searchCities(cities, query).then(searchResults => {
+      if (!isCancelled) {
+        setResults(searchResults)
+        setShowResults(true)
+        setSelectedIndex(0)
+      }
+    })
+
+    return () => {
+      isCancelled = true
+    }
+  }, [query, cities])
 
   // 点击外部关闭搜索结果
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { City } from './cityUtils'
-import { TranslationData, smartTranslate } from './translationUtils'
+import { smartTranslate } from './translationUtils'
 
 export interface ParsedConnection {
   type: 'connection'
@@ -86,21 +86,20 @@ export function parseEventText(text: string): ParsedEvent[] {
  * - "德国" -> 搜索德国的主要城市
  * 支持中文地名，会自动翻译为英文
  */
-export function geocodeLocation(
+export async function geocodeLocation(
   locationStr: string,
-  cities: City[],
-  translations?: TranslationData
-): { latitude: number; longitude: number } | null {
+  cities: City[]
+): Promise<{ latitude: number; longitude: number } | null> {
   if (!locationStr || !cities.length) {
     return null
   }
 
   const parts = locationStr.split(',').map(p => p.trim())
 
-  // 如果有翻译数据，将中文翻译为英文
-  const translatedParts = translations
-    ? parts.map(part => smartTranslate(part, translations))
-    : parts
+  // 将中文翻译为英文
+  const translatedParts = await Promise.all(
+    parts.map(part => smartTranslate(part))
+  )
 
   let searchQuery = ''
   let countryName = ''
@@ -191,20 +190,19 @@ export interface GeocodedConnection {
   relationship: string
 }
 
-export function geocodeEvents(
+export async function geocodeEvents(
   events: ParsedEvent[],
-  cities: City[],
-  translations?: TranslationData
-): {
+  cities: City[]
+): Promise<{
   markers: GeocodedMarker[]
   connections: GeocodedConnection[]
-} {
+}> {
   const markers: GeocodedMarker[] = []
   const connections: GeocodedConnection[] = []
 
   for (const event of events) {
     if (event.type === 'pin') {
-      const coords = geocodeLocation(event.location, cities, translations)
+      const coords = await geocodeLocation(event.location, cities)
       if (coords) {
         markers.push({
           latitude: coords.latitude,
@@ -215,8 +213,8 @@ export function geocodeEvents(
         })
       }
     } else if (event.type === 'connection') {
-      const coords1 = geocodeLocation(event.location1, cities, translations)
-      const coords2 = geocodeLocation(event.location2, cities, translations)
+      const coords1 = await geocodeLocation(event.location1, cities)
+      const coords2 = await geocodeLocation(event.location2, cities)
 
       if (coords1 && coords2) {
         const marker1: GeocodedMarker = {

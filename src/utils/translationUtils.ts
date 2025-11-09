@@ -1,67 +1,124 @@
 /**
- * 翻译工具
- * 加载和管理中英文地名翻译
+ * 翻译工具 - 直接使用原始 countries.json 数据
  */
 
-export interface TranslationData {
-  countries: Record<string, string>
-  states: Record<string, string>
-  cities: Record<string, string>
+export interface Country {
+  id: number
+  name: string
+  iso2: string
+  iso3: string
+  translations: {
+    'zh-CN': string
+    [key: string]: string
+  }
 }
 
-let translationData: TranslationData | null = null
+let countriesData: Country[] | null = null
 
 /**
- * 加载翻译数据
+ * 加载国家数据（包含中文翻译）
  */
-export async function loadTranslations(): Promise<TranslationData> {
-  if (translationData) {
-    return translationData
+export async function loadCountries(): Promise<Country[]> {
+  if (countriesData) {
+    return countriesData
   }
 
   try {
-    const response = await fetch('/locales/zh-CN.json')
+    const response = await fetch('/data/countries.json')
     if (!response.ok) {
-      throw new Error(`Failed to fetch translations: ${response.status}`)
+      throw new Error(`Failed to fetch countries: ${response.status}`)
     }
-    translationData = await response.json()
-    console.log(`✅ 加载翻译数据成功`)
-    return translationData!
+    countriesData = await response.json()
+    console.log(`✅ 加载 ${countriesData!.length} 个国家数据（含中文翻译）`)
+    return countriesData!
   } catch (error) {
-    console.error('❌ 加载翻译数据失败:', error)
-    // 返回空翻译数据
-    return {
-      countries: {},
-      states: {},
-      cities: {}
-    }
+    console.error('❌ 加载国家数据失败:', error)
+    return []
   }
 }
 
 /**
- * 将中文翻译为英文
+ * 中文城市名称映射（仅主要城市）
+ * 因为原始数据库没有城市的中文翻译，这里手动维护常用城市
  */
-export function translateToEnglish(
-  chineseText: string,
-  translations: TranslationData
-): string | null {
-  // 尝试从国家翻译
-  if (translations.countries[chineseText]) {
-    return translations.countries[chineseText]
-  }
+const CITY_TRANSLATIONS: Record<string, string> = {
+  '北京': 'Beijing',
+  '上海': 'Shanghai',
+  '广州': 'Guangzhou',
+  '深圳': 'Shenzhen',
+  '成都': 'Chengdu',
+  '杭州': 'Hangzhou',
+  '重庆': 'Chongqing',
+  '武汉': 'Wuhan',
+  '西安': "Xi'an",
+  '苏州': 'Suzhou',
+  '天津': 'Tianjin',
+  '南京': 'Nanjing',
+  '长沙': 'Changsha',
+  '郑州': 'Zhengzhou',
+  '沈阳': 'Shenyang',
+  '青岛': 'Qingdao',
+  '东莞': 'Dongguan',
+  '大连': 'Dalian',
+  '宁波': 'Ningbo',
+  '厦门': 'Xiamen',
+  '福州': 'Fuzhou',
+  '无锡': 'Wuxi',
+  '合肥': 'Hefei',
+  '昆明': 'Kunming',
+  '哈尔滨': 'Harbin',
+  '济南': 'Jinan',
+  '佛山': 'Foshan',
+  '长春': 'Changchun',
+  '温州': 'Wenzhou',
+  '石家庄': 'Shijiazhuang',
+  '南宁': 'Nanning',
+  '南昌': 'Nanchang',
+  '贵阳': 'Guiyang',
+  '太原': 'Taiyuan',
+  '香港': 'Hong Kong',
+  '澳门': 'Macao',
+  '台北': 'Taipei'
+}
 
-  // 尝试从州/省翻译
-  if (translations.states[chineseText]) {
-    return translations.states[chineseText]
-  }
-
-  // 尝试从城市翻译
-  if (translations.cities[chineseText]) {
-    return translations.cities[chineseText]
-  }
-
-  // 如果没有找到翻译，返回原文
-  return null
+/**
+ * 中文省份名称映射
+ */
+const STATE_TRANSLATIONS: Record<string, string> = {
+  '安徽': 'Anhui',
+  '北京': 'Beijing',
+  '重庆': 'Chongqing',
+  '福建': 'Fujian',
+  '甘肃': 'Gansu',
+  '广东': 'Guangdong',
+  '广西': 'Guangxi',
+  '贵州': 'Guizhou',
+  '海南': 'Hainan',
+  '河北': 'Hebei',
+  '黑龙江': 'Heilongjiang',
+  '河南': 'Henan',
+  '香港': 'Hong Kong',
+  '湖北': 'Hubei',
+  '湖南': 'Hunan',
+  '内蒙古': 'Inner Mongolia',
+  '江苏': 'Jiangsu',
+  '江西': 'Jiangxi',
+  '吉林': 'Jilin',
+  '辽宁': 'Liaoning',
+  '澳门': 'Macao',
+  '宁夏': 'Ningxia',
+  '青海': 'Qinghai',
+  '陕西': 'Shaanxi',
+  '山东': 'Shandong',
+  '上海': 'Shanghai',
+  '山西': 'Shanxi',
+  '四川': 'Sichuan',
+  '台湾': 'Taiwan',
+  '天津': 'Tianjin',
+  '西藏': 'Tibet',
+  '新疆': 'Xinjiang',
+  '云南': 'Yunnan',
+  '浙江': 'Zhejiang'
 }
 
 /**
@@ -72,24 +129,47 @@ export function containsChinese(text: string): boolean {
 }
 
 /**
- * 智能翻译地点名称
- * 如果是中文，翻译为英文；如果是英文，保持不变
+ * 将中文翻译为英文
+ * @param chineseText 中文文本
+ * @param countries 国家数据（可选，如果已加载）
  */
-export function smartTranslate(
-  locationName: string,
-  translations: TranslationData
+export function translateToEnglish(
+  chineseText: string,
+  countries?: Country[]
 ): string {
-  const trimmed = locationName.trim()
+  const trimmed = chineseText.trim()
 
-  // 如果包含中文，尝试翻译
-  if (containsChinese(trimmed)) {
-    const translated = translateToEnglish(trimmed, translations)
-    if (translated) {
-      console.log(`🔄 翻译: "${trimmed}" -> "${translated}"`)
-      return translated
+  // 1. 尝试城市翻译
+  if (CITY_TRANSLATIONS[trimmed]) {
+    return CITY_TRANSLATIONS[trimmed]
+  }
+
+  // 2. 尝试省份翻译
+  if (STATE_TRANSLATIONS[trimmed]) {
+    return STATE_TRANSLATIONS[trimmed]
+  }
+
+  // 3. 尝试国家翻译（从 countries.json 的 translations["zh-CN"] 字段）
+  if (countries) {
+    const country = countries.find(c => c.translations['zh-CN'] === trimmed)
+    if (country) {
+      console.log(`🔄 翻译国家: "${trimmed}" -> "${country.name}"`)
+      return country.name
     }
   }
 
-  // 返回原文
+  // 4. 如果没找到翻译，返回原文
   return trimmed
+}
+
+/**
+ * 智能翻译：如果是中文则翻译，否则保持原文
+ */
+export async function smartTranslate(text: string): Promise<string> {
+  if (!containsChinese(text)) {
+    return text
+  }
+
+  const countries = await loadCountries()
+  return translateToEnglish(text, countries)
 }
