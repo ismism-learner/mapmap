@@ -142,10 +142,6 @@ function App() {
     // 更新最后一个标记（用于自动连接）
     setLastMarker(newMarker)
     setSelectedMarker(newMarker)
-
-    // 飞到新标记位置
-    setFlyToCity({ lon: longitude, lat: latitude })
-    setTimeout(() => setFlyToCity(null), 100)
   }
 
   // 点击自定义标记
