@@ -1,0 +1,236 @@
+import { City } from './cityUtils'
+
+export interface ParsedConnection {
+  type: 'connection'
+  time: string
+  eventName: string
+  location1: string
+  relationship: string
+  location2: string
+}
+
+export interface ParsedPin {
+  type: 'pin'
+  time: string
+  eventName: string
+  location: string
+  description: string
+}
+
+export type ParsedEvent = ParsedConnection | ParsedPin
+
+/**
+ * 解析单行事件文本
+ * - 连接线格式：时间;事件名;地点1;关系;地点2
+ * - 图钉格式：;时间;事件名;地点;描述
+ */
+export function parseEventLine(line: string): ParsedEvent | null {
+  const trimmedLine = line.trim()
+
+  if (!trimmedLine) {
+    return null
+  }
+
+  const parts = trimmedLine.split(';').map(p => p.trim())
+
+  // 图钉格式：以分号开头，第一个元素为空
+  if (parts[0] === '' && parts.length >= 5) {
+    return {
+      type: 'pin',
+      time: parts[1],
+      eventName: parts[2],
+      location: parts[3],
+      description: parts[4]
+    }
+  }
+
+  // 连接线格式：时间;事件名;地点1;关系;地点2
+  if (parts.length >= 5 && parts[0] !== '') {
+    return {
+      type: 'connection',
+      time: parts[0],
+      eventName: parts[1],
+      location1: parts[2],
+      relationship: parts[3],
+      location2: parts[4]
+    }
+  }
+
+  console.warn('⚠️ 无法解析行:', line)
+  return null
+}
+
+/**
+ * 解析多行事件文本
+ */
+export function parseEventText(text: string): ParsedEvent[] {
+  const lines = text.split('\n')
+  const events: ParsedEvent[] = []
+
+  for (const line of lines) {
+    const event = parseEventLine(line)
+    if (event) {
+      events.push(event)
+    }
+  }
+
+  return events
+}
+
+/**
+ * 地理编码：将地点字符串转换为经纬度坐标
+ * 支持格式：
+ * - "美国,加利福尼亚" -> 搜索加利福尼亚州的城市
+ * - "中国,北京" -> 搜索北京
+ * - "德国" -> 搜索德国的主要城市
+ */
+export function geocodeLocation(locationStr: string, cities: City[]): { latitude: number; longitude: number } | null {
+  if (!locationStr || !cities.length) {
+    return null
+  }
+
+  const parts = locationStr.split(',').map(p => p.trim())
+
+  let searchQuery = ''
+  let countryName = ''
+  let stateName = ''
+  let cityName = ''
+
+  if (parts.length === 1) {
+    // 单个名称：可能是国家或城市
+    searchQuery = parts[0]
+    countryName = parts[0]
+  } else if (parts.length === 2) {
+    // 两个名称：国家,州/城市
+    countryName = parts[0]
+    cityName = parts[1]
+    stateName = parts[1]
+    searchQuery = parts[1] // 优先搜索城市/州
+  } else if (parts.length >= 3) {
+    // 三个或更多：国家,州,城市
+    countryName = parts[0]
+    stateName = parts[1]
+    cityName = parts[2]
+    searchQuery = parts[2] // 优先搜索城市
+  }
+
+  // 搜索匹配的城市
+  const candidates = cities.filter(city => {
+    const lowerCityName = city.name.toLowerCase()
+    const lowerCountryName = city.country_name.toLowerCase()
+    const lowerStateName = city.state_name.toLowerCase()
+    const lowerSearchQuery = searchQuery.toLowerCase()
+    const lowerCountryFilter = countryName.toLowerCase()
+    const lowerStateFilter = stateName.toLowerCase()
+
+    // 优先精确匹配城市名
+    const cityMatch = lowerCityName.includes(lowerSearchQuery) ||
+                      lowerSearchQuery.includes(lowerCityName)
+
+    // 州/省匹配
+    const stateMatch = lowerStateName.includes(lowerStateFilter) ||
+                       lowerStateFilter.includes(lowerStateName)
+
+    // 国家匹配
+    const countryMatch = lowerCountryName.includes(lowerCountryFilter) ||
+                         lowerCountryFilter.includes(lowerCountryName)
+
+    // 组合匹配逻辑
+    if (cityName && stateName && countryName) {
+      return cityMatch && stateMatch && countryMatch
+    } else if (cityName && countryName) {
+      return cityMatch && countryMatch
+    } else if (stateName && countryName) {
+      return stateMatch && countryMatch
+    } else {
+      // 单个搜索词：匹配任何字段
+      return cityMatch || stateMatch || countryMatch
+    }
+  })
+
+  if (candidates.length > 0) {
+    // 选择第一个匹配结果（通常是人口最多的）
+    const city = candidates[0]
+    console.log(`📍 地理编码: "${locationStr}" -> ${city.name}, ${city.country_name} (${city.latitude}, ${city.longitude})`)
+
+    return {
+      latitude: parseFloat(city.latitude),
+      longitude: parseFloat(city.longitude)
+    }
+  }
+
+  console.warn(`⚠️ 无法找到地点: "${locationStr}"`)
+  return null
+}
+
+/**
+ * 将解析后的事件转换为标记和连接
+ */
+export interface GeocodedMarker {
+  latitude: number
+  longitude: number
+  title: string
+  description: string
+  time: string
+}
+
+export interface GeocodedConnection {
+  marker1: GeocodedMarker
+  marker2: GeocodedMarker
+  relationship: string
+}
+
+export function geocodeEvents(
+  events: ParsedEvent[],
+  cities: City[]
+): {
+  markers: GeocodedMarker[]
+  connections: GeocodedConnection[]
+} {
+  const markers: GeocodedMarker[] = []
+  const connections: GeocodedConnection[] = []
+
+  for (const event of events) {
+    if (event.type === 'pin') {
+      const coords = geocodeLocation(event.location, cities)
+      if (coords) {
+        markers.push({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          title: event.eventName,
+          description: `${event.description}\n时间: ${event.time}`,
+          time: event.time
+        })
+      }
+    } else if (event.type === 'connection') {
+      const coords1 = geocodeLocation(event.location1, cities)
+      const coords2 = geocodeLocation(event.location2, cities)
+
+      if (coords1 && coords2) {
+        const marker1: GeocodedMarker = {
+          latitude: coords1.latitude,
+          longitude: coords1.longitude,
+          title: event.eventName,
+          description: `${event.location1}\n${event.relationship}\n时间: ${event.time}`,
+          time: event.time
+        }
+
+        const marker2: GeocodedMarker = {
+          latitude: coords2.latitude,
+          longitude: coords2.longitude,
+          title: event.eventName,
+          description: `${event.location2}\n时间: ${event.time}`,
+          time: event.time
+        }
+
+        connections.push({
+          marker1,
+          marker2,
+          relationship: event.relationship
+        })
+      }
+    }
+  }
+
+  return { markers, connections }
+}
