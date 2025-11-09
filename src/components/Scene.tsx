@@ -301,15 +301,14 @@ function Scene({
           onChange={handleCameraChange}
         />
       ) : (
-        /* 球形模式：旋转控制 */
+        /* 球形模式：旋转控制（禁用惯性，立即停止） */
         <OrbitControls
           enableZoom={true}
           enablePan={false}
           enableRotate={true}
           zoomSpeed={0.6}
           rotateSpeed={0.4}
-          enableDamping={true}
-          dampingFactor={0.01}
+          enableDamping={false}
           onStart={handleCameraStart}
           onChange={handleCameraChange}
         />

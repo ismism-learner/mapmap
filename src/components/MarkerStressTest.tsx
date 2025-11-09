@@ -123,8 +123,8 @@ function MarkerStressTest({ onGenerateMarkers }: MarkerStressTestProps) {
       <div
         style={{
           position: 'fixed',
-          top: '100px',
-          right: '20px',
+          bottom: '70px',
+          left: '20px',
           background: 'rgba(0, 0, 0, 0.7)',
           color: 'white',
           padding: '8px 12px',
@@ -145,8 +145,8 @@ function MarkerStressTest({ onGenerateMarkers }: MarkerStressTestProps) {
     <div
       style={{
         position: 'fixed',
-        top: '100px',
-        right: '20px',
+        bottom: '70px',
+        left: '20px',
         background: 'rgba(0, 0, 0, 0.9)',
         color: 'white',
         padding: '16px',
