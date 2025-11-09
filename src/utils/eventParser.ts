@@ -98,12 +98,24 @@ export function parseEventText(text: string): ParsedEvent[] {
 }
 
 /**
+ * 标准化字符串用于拼音匹配
+ * 移除空格、撇号、连字符等特殊字符，转小写
+ * 例如："Xi'an" -> "xian", "New York" -> "newyork"
+ */
+function normalizeForPinyinMatch(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/['\-\s]/g, '')  // 移除撇号、连字符、空格
+    .trim()
+}
+
+/**
  * 地理编码：将地点字符串转换为经纬度坐标
  * 支持格式：
  * - "美国,加利福尼亚" -> 搜索加利福尼亚州的城市
  * - "中国,北京" -> 搜索北京
  * - "德国" -> 搜索德国的主要城市
- * 支持中文地名，会自动翻译为英文
+ * 支持中文地名，会自动翻译为英文（或转换为拼音）
  */
 export async function geocodeLocation(
   locationStr: string,
@@ -139,25 +151,25 @@ export async function geocodeLocation(
     cityName = translatedParts[2]
   }
 
-  // 搜索匹配的城市 - 使用精确层级匹配
+  // 搜索匹配的城市 - 使用精确层级匹配 + 拼音匹配
   const candidates = cities.filter(city => {
-    const lowerCityName = city.name.toLowerCase()
-    const lowerCountryName = city.country_name.toLowerCase()
-    const lowerStateName = city.state_name.toLowerCase()
-    const lowerCityFilter = cityName.toLowerCase()
-    const lowerCountryFilter = countryName.toLowerCase()
-    const lowerStateFilter = stateName.toLowerCase()
+    // 标准化所有名称用于拼音匹配
+    const normCityName = normalizeForPinyinMatch(city.name)
+    const normCountryName = normalizeForPinyinMatch(city.country_name)
+    const normStateName = normalizeForPinyinMatch(city.state_name)
+    const normCityFilter = normalizeForPinyinMatch(cityName)
+    const normCountryFilter = normalizeForPinyinMatch(countryName)
+    const normStateFilter = normalizeForPinyinMatch(stateName)
 
-    // 精确匹配：使用 === 而不是 includes
-    // 如果需要模糊匹配，只在名称开头匹配 (startsWith)
-    const cityMatch = lowerCityFilter &&
-      (lowerCityName === lowerCityFilter || lowerCityName.startsWith(lowerCityFilter))
+    // 拼音匹配：标准化后精确匹配或开头匹配
+    const cityMatch = normCityFilter &&
+      (normCityName === normCityFilter || normCityName.startsWith(normCityFilter))
 
-    const stateMatch = lowerStateFilter &&
-      (lowerStateName === lowerStateFilter || lowerStateName.startsWith(lowerStateFilter))
+    const stateMatch = normStateFilter &&
+      (normStateName === normStateFilter || normStateName.startsWith(normStateFilter))
 
-    const countryMatch = lowerCountryFilter &&
-      (lowerCountryName === lowerCountryFilter || lowerCountryName.startsWith(lowerCountryFilter))
+    const countryMatch = normCountryFilter &&
+      (normCountryName === normCountryFilter || normCountryName.startsWith(normCountryFilter))
 
     // 组合匹配逻辑 - 按层级结构匹配
     if (translatedParts.length === 3) {

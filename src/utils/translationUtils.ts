@@ -1,6 +1,9 @@
 /**
  * 翻译工具 - 直接使用原始 countries.json 数据
+ * 支持拼音匹配城市/州名
  */
+
+import { pinyin } from 'pinyin-pro'
 
 export interface Country {
   id: number
@@ -129,6 +132,25 @@ export function containsChinese(text: string): boolean {
 }
 
 /**
+ * 将中文转换为拼音（用于匹配数据库中的拼音地名）
+ * 例如："北京" -> "beijing"
+ */
+export function chineseToPinyin(text: string): string {
+  if (!containsChinese(text)) {
+    return text
+  }
+
+  // 转换为拼音，不带音调，返回字符串（默认用空格分隔）
+  const pinyinText = pinyin(text, {
+    toneType: 'none',      // 不要声调
+    type: 'string'         // 返回字符串类型
+  })
+
+  // 移除空格，转小写
+  return pinyinText.replace(/\s+/g, '').toLowerCase()
+}
+
+/**
  * 将中文翻译为英文
  * @param chineseText 中文文本
  * @param countries 国家数据（可选，如果已加载）
@@ -160,7 +182,14 @@ export function translateToEnglish(
     }
   }
 
-  // 4. 如果没找到翻译，返回原文
+  // 4. 如果是中文但没找到翻译，转换为拼音用于匹配
+  if (containsChinese(trimmed)) {
+    const pinyinResult = chineseToPinyin(trimmed)
+    console.log(`🔄 拼音转换: "${trimmed}" -> "${pinyinResult}"`)
+    return pinyinResult
+  }
+
+  // 5. 返回原文
   return trimmed
 }
 
