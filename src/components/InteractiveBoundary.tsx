@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Line } from '@react-three/drei'
 import { loadShapefile, lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
@@ -19,9 +18,6 @@ interface BoundaryFeature {
   id: number
   name?: string
   lines: THREE.Vector3[][]
-  mesh: THREE.Mesh | null
-  hoverIntensity: number
-  targetIntensity: number
 }
 
 /**
@@ -98,10 +94,7 @@ function InteractiveBoundary({
             featuresList.push({
               id: idx,
               name: feature.properties?.name || feature.properties?.NAME || `区域 ${idx}`,
-              lines,
-              mesh: null,
-              hoverIntensity: 0,
-              targetIntensity: 0
+              lines
             })
           }
         })
@@ -118,44 +111,15 @@ function InteractiveBoundary({
     loadBoundaries()
   }, [shpPath, visible, radius, isFlat, mapWidth, mapHeight])
 
-  // 动画循环：平滑过渡发光强度
-  useFrame(() => {
-    setFeatures(prev => prev.map(feature => {
-      const diff = feature.targetIntensity - feature.hoverIntensity
-      if (Math.abs(diff) > 0.001) {
-        return {
-          ...feature,
-          hoverIntensity: feature.hoverIntensity + diff * 0.1 // 平滑插值
-        }
-      }
-      return feature
-    }))
-  })
-
   const handleClick = (id: number, name?: string) => {
     // 如果点击的是已选中的区域，则取消选中
     if (hoveredId === id) {
       setHoveredId(null)
-      setFeatures(prev => prev.map(f =>
-        f.id === id ? { ...f, targetIntensity: 0 } : f
-      ))
       console.log(`🖱️ 取消选择: ${name}`)
     } else {
       // 否则选中新区域，并取消之前的选择
       setHoveredId(id)
-      setFeatures(prev => prev.map(f =>
-        f.id === id ? { ...f, targetIntensity: 0.6 } : { ...f, targetIntensity: 0 }
-      ))
       console.log(`🖱️ 点击选中: ${name}`)
-    }
-  }
-
-  // 处理点击空白区域（取消选中）
-  const handleBackgroundClick = () => {
-    if (hoveredId !== null) {
-      setHoveredId(null)
-      setFeatures(prev => prev.map(f => ({ ...f, targetIntensity: 0 })))
-      console.log('🖱️ 点击空白区域，取消选择')
     }
   }
 
@@ -165,20 +129,6 @@ function InteractiveBoundary({
 
   return (
     <group ref={groupRef} name="interactive-boundary-layer">
-      {/* 背景层：捕获空白区域点击 */}
-      <mesh
-        onClick={handleBackgroundClick}
-        position={[0, 0, isFlat ? -0.01 : 0]}
-        visible={false}
-      >
-        {isFlat ? (
-          <planeGeometry args={[mapWidth * 2, mapHeight * 2]} />
-        ) : (
-          <sphereGeometry args={[radius * 0.99, 64, 64]} />
-        )}
-        <meshBasicMaterial transparent opacity={0} />
-      </mesh>
-
       {features.map((feature) => {
         const isHovered = hoveredId === feature.id
 
@@ -196,7 +146,7 @@ function InteractiveBoundary({
               />
             ))}
 
-            {/* 平面模式：填充区域用于鼠标检测（完全透明） */}
+            {/* 平面模式：简化的点击检测区域 */}
             {isFlat && feature.lines.length > 0 && feature.lines[0].length > 2 && (
               <mesh
                 onClick={(e) => {
@@ -204,6 +154,7 @@ function InteractiveBoundary({
                   handleClick(feature.id, feature.name)
                 }}
                 position={[0, 0, 0.001]}
+                visible={false}
               >
                 <shapeGeometry
                   args={[
@@ -212,42 +163,8 @@ function InteractiveBoundary({
                     )
                   ]}
                 />
-                <meshBasicMaterial
-                  transparent
-                  opacity={0}
-                  side={THREE.DoubleSide}
-                />
               </mesh>
             )}
-
-            {/* 球形模式：使用管道几何体创建可点击的边界（完全透明） */}
-            {!isFlat && feature.lines.length > 0 && feature.lines.map((points, lineIdx) => {
-              if (points.length < 2) return null
-
-              return (
-                <mesh
-                  key={`tube-${feature.id}-${lineIdx}`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleClick(feature.id, feature.name)
-                  }}
-                >
-                  <tubeGeometry
-                    args={[
-                      new THREE.CatmullRomCurve3(points),
-                      points.length * 2,
-                      0.008, // 管道半径
-                      8,
-                      false
-                    ]}
-                  />
-                  <meshBasicMaterial
-                    transparent
-                    opacity={0}
-                  />
-                </mesh>
-              )
-            })}
           </group>
         )
       })}
