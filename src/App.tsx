@@ -11,6 +11,7 @@ import EventInput from './components/EventInput'
 import PerformanceMonitor from './components/PerformanceMonitor'
 import MarkerStressTest from './components/MarkerStressTest'
 import ClickDebugger from './components/ClickDebugger'
+import AdminPanel from './components/AdminPanel'
 import { City, loadCities } from './utils/cityUtils'
 import { TextureConfig, loadTextures } from './types/texture'
 import {
@@ -61,6 +62,9 @@ function App() {
   // 地图模式（球形/平面）
   const [isFlatMode, setIsFlatMode] = useState(false) // 默认球形模式
   const [isTransitioning, setIsTransitioning] = useState(false) // 切片过渡状态
+
+  // 管理员模式
+  const [isAdminMode, setIsAdminMode] = useState(true) // 默认开启，部署时可改为false
 
   const [flyToCity, setFlyToCity] = useState<{ lon: number; lat: number } | null>(null)
 
@@ -125,6 +129,12 @@ function App() {
 
   // 双击地球放置自定义标记
   const handleDoubleClick = (latitude: number, longitude: number) => {
+    // 只有管理员模式才能创建标记
+    if (!isAdminMode) {
+      console.log('用户模式下无法创建标记')
+      return
+    }
+
     const newMarker: CustomMarker = {
       id: generateId(),
       latitude,
@@ -370,6 +380,26 @@ function App() {
     setSelectedMarker(null)
   }
 
+  // 导入数据
+  const handleImportData = (data: { markers: CustomMarker[], connections: MarkerConnection[] }) => {
+    setCustomMarkers(data.markers)
+    setConnections(data.connections)
+    setLastMarker(null)
+    setSelectedMarker(null)
+    setFirstMarkerForConnect(null)
+  }
+
+  // 切换管理员模式
+  const handleToggleAdminMode = () => {
+    setIsAdminMode(!isAdminMode)
+    if (isAdminMode) {
+      // 切换到用户模式时，关闭所有编辑面板
+      setSelectedMarker(null)
+      setManualConnectMode(false)
+      setFirstMarkerForConnect(null)
+    }
+  }
+
   // 获取当前选中的底图路径
   const currentTexturePath = textures.find(t => t.id === selectedTexture)?.path
 
@@ -424,8 +454,8 @@ function App() {
       {/* 城市信息卡片 */}
       <InfoCard city={selectedCity} onClose={() => setSelectedCity(null)} />
 
-      {/* 自定义标记信息面板 */}
-      {selectedMarker && !manualConnectMode && (
+      {/* 自定义标记信息面板 - 只有管理员模式才能编辑 */}
+      {selectedMarker && !manualConnectMode && isAdminMode && (
         <EditableInfoPanel
           marker={selectedMarker}
           onSave={handleSaveMarkerInfo}
@@ -434,23 +464,34 @@ function App() {
         />
       )}
 
-      {/* 模式切换按钮 */}
-      <ModeToggle
-        autoConnect={autoConnect}
-        onToggleAutoConnect={handleToggleAutoConnect}
-        manualConnectMode={manualConnectMode}
-        onToggleManualConnect={handleToggleManualConnect}
-        hasSelectedMarker={!!firstMarkerForConnect}
+      {/* 模式切换按钮 - 仅管理员模式 */}
+      {isAdminMode && (
+        <ModeToggle
+          autoConnect={autoConnect}
+          onToggleAutoConnect={handleToggleAutoConnect}
+          manualConnectMode={manualConnectMode}
+          onToggleManualConnect={handleToggleManualConnect}
+          hasSelectedMarker={!!firstMarkerForConnect}
+        />
+      )}
+
+      {/* 批量事件创建 - 仅管理员模式 */}
+      {isAdminMode && <EventInput onCreateEvents={handleCreateEvents} />}
+
+      {/* 压力测试工具 - 仅管理员模式 */}
+      {isAdminMode && <MarkerStressTest onGenerateMarkers={handleGenerateTestMarkers} />}
+
+      {/* 点击调试工具 - 仅管理员模式 */}
+      {isAdminMode && <ClickDebugger />}
+
+      {/* 管理员面板 */}
+      <AdminPanel
+        isAdminMode={isAdminMode}
+        onToggleAdminMode={handleToggleAdminMode}
+        customMarkers={customMarkers}
+        connections={connections}
+        onImportData={handleImportData}
       />
-
-      {/* 批量事件创建 */}
-      <EventInput onCreateEvents={handleCreateEvents} />
-
-      {/* 压力测试工具 */}
-      <MarkerStressTest onGenerateMarkers={handleGenerateTestMarkers} />
-
-      {/* 点击调试工具 */}
-      <ClickDebugger />
 
       {/* 球形展开/收缩过渡效果 */}
       <UnfoldTransition
