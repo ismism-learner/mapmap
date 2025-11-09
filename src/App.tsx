@@ -536,6 +536,7 @@ function App() {
         info: {
           title: videoInfo?.title || gm.title,
           description: gm.description,
+          time: gm.time || undefined,
           links: links,
           images: images,
           videoInfo: videoInfo || undefined
@@ -560,6 +561,7 @@ function App() {
           info: {
             title: gc.marker1.title,
             description: gc.marker1.description,
+            time: gc.marker1.time || undefined,
             links: [],
             images: []
           },
@@ -575,6 +577,7 @@ function App() {
           info: {
             title: gc.marker2.title,
             description: gc.marker2.description,
+            time: gc.marker2.time || undefined,
             links: [],
             images: []
           },

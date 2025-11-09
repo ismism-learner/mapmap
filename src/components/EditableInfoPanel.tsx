@@ -31,6 +31,7 @@ function EditableInfoPanel({
   const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState(marker.info.title)
   const [description, setDescription] = useState(marker.info.description)
+  const [time, setTime] = useState(marker.info.time || '')
   const [links, setLinks] = useState<MarkerLink[]>(marker.info.links)
   const [images, setImages] = useState<MarkerImage[]>(marker.info.images)
   const [videoInfo, setVideoInfo] = useState(marker.info.videoInfo)
@@ -169,6 +170,7 @@ function EditableInfoPanel({
     onSave({
       title,
       description,
+      time: time || undefined,
       links,
       images,
       videoInfo
@@ -180,6 +182,7 @@ function EditableInfoPanel({
   const handleCancel = () => {
     setTitle(marker.info.title)
     setDescription(marker.info.description)
+    setTime(marker.info.time || '')
     setLinks(marker.info.links)
     setImages(marker.info.images)
     setVideoInfo(marker.info.videoInfo)
@@ -233,6 +236,41 @@ function EditableInfoPanel({
           ) : (
             <p className="description-text">
               {description || '暂无描述'}
+            </p>
+          )}
+        </div>
+
+        {/* 时间 */}
+        <div className="time-section">
+          <label>时间:</label>
+          {isEditing ? (
+            <input
+              type="text"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              placeholder="例如：2024-01-15 或 2024年1月"
+              className="time-input"
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(0, 255, 255, 0.3)',
+                borderRadius: '6px',
+                color: 'white',
+                fontSize: '13px',
+                outline: 'none',
+                transition: 'all 0.2s'
+              }}
+              onFocus={(e) => e.target.style.borderColor = 'rgba(0, 255, 255, 0.6)'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(0, 255, 255, 0.3)'}
+            />
+          ) : (
+            <p className="time-text" style={{
+              margin: '4px 0 0 0',
+              color: time ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.5)',
+              fontSize: '13px'
+            }}>
+              {time || '未设置时间'}
             </p>
           )}
         </div>
