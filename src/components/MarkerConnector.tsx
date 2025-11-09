@@ -221,6 +221,7 @@ function MarkerConnector({
           center
           transform
           sprite
+          distanceFactor={0.15}
           style={{
             pointerEvents: 'none',
             zIndex: 50,
@@ -258,6 +259,7 @@ function MarkerConnector({
           occlude={globeRef ? [globeRef] : undefined}
           transform
           sprite
+          distanceFactor={0.15}
           style={{
             pointerEvents: 'auto',
             zIndex: 100,
@@ -332,6 +334,7 @@ function MarkerConnector({
           occlude={globeRef ? [globeRef] : undefined}
           transform
           sprite
+          distanceFactor={0.15}
           style={{
             pointerEvents: hovered && connection.eventInfo ? 'auto' : 'none',
             zIndex: hovered && connection.eventInfo ? 10000 : 10,
