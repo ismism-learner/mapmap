@@ -1,0 +1,250 @@
+/* 侧边锚定事件面板 */
+.anchored-event-panel {
+  position: fixed;
+  top: 80px;
+  bottom: 20px;
+  width: 320px;
+  z-index: 200;
+  pointer-events: none;
+}
+
+.anchored-event-panel-left {
+  left: 20px;
+}
+
+.anchored-event-panel-right {
+  right: 20px;
+}
+
+.anchored-event-panel-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+  pointer-events: auto;
+}
+
+/* 自定义滚动条 */
+.anchored-event-panel-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.anchored-event-panel-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.anchored-event-panel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.anchored-event-panel-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 255, 0.5);
+}
+
+/* 事件卡片 */
+.event-card {
+  position: relative;
+  background: rgba(20, 25, 35, 0.95);
+  border: 2px solid rgba(0, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.anchored-event-panel-right .event-card {
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.event-card:hover {
+  border-color: rgba(0, 255, 255, 0.6);
+  box-shadow: 0 12px 48px rgba(0, 255, 255, 0.2);
+}
+
+/* 卡片头部 */
+.event-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.event-card-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #00ffff;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.event-card-close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.event-card-close:hover {
+  background: rgba(255, 68, 68, 0.2);
+  color: #ff4444;
+}
+
+/* 卡片内容 */
+.event-card-content {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.event-description {
+  margin: 0 0 12px 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.event-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: rgba(0, 255, 255, 0.05);
+  border-radius: 6px;
+}
+
+.event-location,
+.event-time {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* 事件图片 */
+.event-images {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.event-image-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.event-image-thumb:hover {
+  transform: scale(1.1);
+  border-color: rgba(0, 255, 255, 0.5);
+}
+
+/* 事件链接 */
+.event-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.event-link {
+  color: #00ffff;
+  text-decoration: none;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(0, 255, 255, 0.05);
+  transition: all 0.2s ease;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-link:hover {
+  background: rgba(0, 255, 255, 0.15);
+  transform: translateX(4px);
+}
+
+/* 编辑按钮 */
+.event-edit-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 6px;
+  color: #00ffff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.event-edit-btn:hover {
+  background: rgba(0, 255, 255, 0.2);
+  border-color: rgba(0, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+/* 锚点元素 */
+.event-card-anchor {
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background: #00ffff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+  pointer-events: none;
+}
+
+.anchored-event-panel-left .event-card-anchor {
+  left: auto;
+  right: -2px;
+}
+
+.anchored-event-panel-right .event-card-anchor {
+  left: -2px;
+  right: auto;
+}

@@ -15,6 +15,8 @@ import ManagementPanel from './components/ManagementPanel'
 import UnifiedToolbar from './components/UnifiedToolbar'
 import ImageUpload from './components/ImageUpload'
 import FontSizeControl from './components/FontSizeControl'
+import AnchoredEventPanel, { AnchoredEvent } from './components/AnchoredEventPanel'
+import DynamicConnector, { ConnectorLine } from './components/DynamicConnector'
 import { City, loadCities } from './utils/cityUtils'
 import { TextureConfig, loadTextures } from './types/texture'
 import {
@@ -64,6 +66,11 @@ function App() {
   const [paintMode, setPaintMode] = useState(false) // 上色模式
   const [selectedColor, setSelectedColor] = useState('#FF6B6B') // 选中的颜色
   const [countryColors, setCountryColors] = useState<Map<number, string>>(new Map()) // 国家ID -> 颜色
+
+  // 锚定事件面板状态
+  const [anchoredEvents, setAnchoredEvents] = useState<AnchoredEvent[]>([])
+  const [connectorLines, setConnectorLines] = useState<ConnectorLine[]>([])
+  const [nextEventSide, setNextEventSide] = useState<'left' | 'right'>('left') // 下一个事件放置的侧边
 
   // 光照模式
   const [realisticLighting, setRealisticLighting] = useState(false) // 真实光照模式（默认关闭）
@@ -332,10 +339,48 @@ function App() {
         setFirstMarkerForConnect(null)
       }
     } else {
-      // 普通模式：打开信息面板
-      setSelectedMarker(marker)
+      // 普通模式：激活锚定事件面板
+      handleActivateEvent(marker)
       setSelectedCity(null) // 关闭城市信息卡
     }
+  }
+
+  // 激活锚定事件
+  const handleActivateEvent = (marker: CustomMarker) => {
+    // 检查是否已经激活
+    const existingEvent = anchoredEvents.find(e => e.marker.id === marker.id)
+    if (existingEvent) {
+      // 如果已激活，则停用
+      handleDeactivateEvent(existingEvent.id)
+      return
+    }
+
+    // 创建新的锚定事件
+    const newEvent: AnchoredEvent = {
+      id: `event-${marker.id}-${Date.now()}`,
+      marker,
+      side: nextEventSide,
+    }
+
+    setAnchoredEvents(prev => [...prev, newEvent])
+
+    // 切换下一个事件的侧边
+    setNextEventSide(prev => prev === 'left' ? 'right' : 'left')
+  }
+
+  // 停用锚定事件
+  const handleDeactivateEvent = (eventId: string) => {
+    setAnchoredEvents(prev => prev.filter(e => e.id !== eventId))
+  }
+
+  // 更新连接线坐标
+  const handleConnectorLinesUpdate = (lines: ConnectorLine[]) => {
+    setConnectorLines(lines)
+  }
+
+  // 编辑事件详情
+  const handleEditEventDetails = (marker: CustomMarker) => {
+    setSelectedMarker(marker)
   }
 
   // 保存标记信息
@@ -671,8 +716,29 @@ function App() {
           selectedColor={selectedColor}
           countryColors={countryColors}
           onCountryPaint={handleCountryPaint}
+          anchoredEvents={anchoredEvents}
+          onConnectorLinesUpdate={handleConnectorLinesUpdate}
         />
       </Canvas>
+
+      {/* 动态连接线覆盖层 */}
+      <DynamicConnector lines={connectorLines} />
+
+      {/* 锚定事件面板 - 左侧 */}
+      <AnchoredEventPanel
+        events={anchoredEvents}
+        side="left"
+        onClose={handleDeactivateEvent}
+        onEdit={handleEditEventDetails}
+      />
+
+      {/* 锚定事件面板 - 右侧 */}
+      <AnchoredEventPanel
+        events={anchoredEvents}
+        side="right"
+        onClose={handleDeactivateEvent}
+        onEdit={handleEditEventDetails}
+      />
 
       {/* 性能监控面板 - 在Canvas外部 */}
       <PerformanceMonitor />
