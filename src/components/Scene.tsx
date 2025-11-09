@@ -111,10 +111,10 @@ function Scene({
       clearTimeout(moveTimeoutRef.current)
     }
 
-    // 30ms后如果没有新的移动，则认为已停止（快速响应，避免点击创建图钉时延迟显示）
+    // 100ms后如果没有新的移动，则认为已停止（延长延迟避免闪烁）
     moveTimeoutRef.current = setTimeout(() => {
       setIsCameraMoving(false)
-    }, 30)
+    }, 100)
   }, [isCameraMoving, onConnectorLinesUpdate])
 
   // 当 flyToCity 改变时，执行相机动画

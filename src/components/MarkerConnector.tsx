@@ -181,13 +181,21 @@ function MarkerConnector({
           e.stopPropagation()
           setHovered(false)
         }}
+        onPointerDown={(e) => {
+          // 阻止指针按下事件，防止触发相机移动
+          e.stopPropagation()
+        }}
+        onPointerUp={(e) => {
+          // 阻止指针抬起事件，防止触发相机移动
+          e.stopPropagation()
+        }}
         onClick={(e) => {
-          // 阻止单击事件冒泡，避免干扰双击检测
+          // 阻止单击事件冒泡，避免干扰双击检测和相机控制
           e.stopPropagation()
         }}
         onDoubleClick={(e) => {
           e.stopPropagation()
-          // 同时阻止默认行为，确保事件不会继续传播
+          // 同时阻止默认行为，确保事件不会继续传播到相机控制
           if (e.nativeEvent) {
             e.nativeEvent.stopImmediatePropagation()
           }
@@ -278,8 +286,8 @@ function MarkerConnector({
         </Html>
       )}
 
-      {/* 永久显示标签（事件信息或简单标签） */}
-      {!isEditing && (label || connection.eventInfo) && (
+      {/* 只在悬停时显示标签（性能优化） */}
+      {!isEditing && hovered && (label || connection.eventInfo) && (
         <Html
           position={[labelPosition.x, labelPosition.y, labelPosition.z]}
           center
@@ -288,28 +296,28 @@ function MarkerConnector({
           sprite
           distanceFactor={0.15}
           style={{
-            pointerEvents: hovered && connection.eventInfo ? 'auto' : 'none',
-            zIndex: hovered && connection.eventInfo ? 10000 : 10,
+            pointerEvents: connection.eventInfo ? 'auto' : 'none',
+            zIndex: 10000,
           }}
           zIndexRange={[100, 0]}
         >
           <div
             style={{
-              background: hovered && connection.eventInfo ? 'rgba(0, 0, 0, 0.92)' : 'rgba(0, 0, 0, 0.85)',
+              background: 'rgba(0, 0, 0, 0.92)',
               color: 'white',
-              padding: hovered && connection.eventInfo ? '10px 14px' : '4px 10px',
-              borderRadius: hovered && connection.eventInfo ? '8px' : '5px',
-              fontSize: `${labelFontSize}px`,
+              padding: connection.eventInfo ? '10px 14px' : '6px 12px',
+              borderRadius: '8px',
+              fontSize: connection.eventInfo ? '13px' : `${labelFontSize}px`,
               fontWeight: '500',
               whiteSpace: 'nowrap',
-              border: hovered && connection.eventInfo ? '2px solid #00ffff' : '1px solid rgba(0, 255, 255, 0.3)',
-              boxShadow: hovered && connection.eventInfo ? '0 4px 16px rgba(0, 255, 255, 0.3)' : '0 2px 8px rgba(0,0,0,0.3)',
-              maxWidth: hovered && connection.eventInfo ? '280px' : 'none',
+              border: '2px solid #00ffff',
+              boxShadow: '0 4px 16px rgba(0, 255, 255, 0.3)',
+              maxWidth: '280px',
               transition: 'all 0.2s',
               userSelect: 'none',
             }}
           >
-            {hovered && connection.eventInfo ? (
+            {connection.eventInfo ? (
               <>
                 <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#00ffff', fontSize: '13px' }}>
                   {connection.eventInfo.eventName}
@@ -324,7 +332,7 @@ function MarkerConnector({
                 )}
               </>
             ) : (
-              connection.eventInfo?.eventName || label
+              label
             )}
           </div>
         </Html>
