@@ -8,6 +8,7 @@ interface FlatMapControlsProps {
   mapHeight?: number
   minZoom?: number
   maxZoom?: number
+  onStart?: () => void
   onChange?: () => void
 }
 
@@ -22,6 +23,7 @@ function FlatMapControls({
   mapHeight = 2,
   minZoom = 1.5,   // 最小缩放：完整显示地图
   maxZoom = 12,    // 最大缩放：可以看到细节
+  onStart,
   onChange
 }: FlatMapControlsProps) {
   const controlsRef = useRef<any>(null)
@@ -102,10 +104,11 @@ function FlatMapControls({
         RIGHT: THREE.MOUSE.PAN
       }}
       screenSpacePanning={true}
-      dampingFactor={0.1}
+      dampingFactor={0.05}
       enableDamping={true}
       maxPolarAngle={Math.PI / 2}
       minPolarAngle={Math.PI / 2}
+      onStart={onStart}
       onChange={onChange}
     />
   )
