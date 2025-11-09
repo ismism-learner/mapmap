@@ -55,7 +55,15 @@ function Marker({ city, onClick, radius = 1.01 }: MarkerProps) {
 
       {/* 悬停时显示城市名 */}
       {hovered && (
-        <Html distanceFactor={0.5} position={[0, 0.02, 0]}>
+        <Html
+          distanceFactor={0.5}
+          position={[0, 0.02, 0]}
+          style={{
+            pointerEvents: 'none',
+            zIndex: 100,
+          }}
+          zIndexRange={[100, 0]}
+        >
           <div
             style={{
               background: 'rgba(0, 0, 0, 0.8)',

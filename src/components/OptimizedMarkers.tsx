@@ -197,7 +197,9 @@ function OptimizedMarkers({
           style={{
             transition: 'opacity 0.2s',
             pointerEvents: 'none',
+            zIndex: 100,
           }}
+          zIndexRange={[100, 0]}
         >
           <div
             style={{
@@ -210,6 +212,7 @@ function OptimizedMarkers({
               whiteSpace: 'nowrap',
               boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
               border: '1px solid rgba(255,255,255,0.2)',
+              pointerEvents: 'none',
             }}
           >
             {hoveredMarker.label}
