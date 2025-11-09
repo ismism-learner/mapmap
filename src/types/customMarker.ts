@@ -45,6 +45,7 @@ export interface MarkerConnection {
   id: string
   fromMarkerId: string
   toMarkerId: string
+  label?: string // 连接线上的标签文字
 }
 
 /**

@@ -32,6 +32,7 @@ interface SceneProps {
   isFlatMode?: boolean
   useOptimizedRendering?: boolean
   onLabelDrag?: (markerId: string, offset: { x: number; y: number }) => void
+  onConnectionLabelChange?: (connectionId: string, newLabel: string) => void
 }
 
 function Scene({
@@ -49,7 +50,8 @@ function Scene({
   texturePath,
   isFlatMode = false,
   useOptimizedRendering = true,
-  onLabelDrag
+  onLabelDrag,
+  onConnectionLabelChange
 }: SceneProps) {
   const { flyTo } = useCameraControls()
   const globeRef = useRef<Mesh>(null)
@@ -188,6 +190,8 @@ function Scene({
             color="#00ffff"
             lineWidth={2}
             isFlat={isFlatMode}
+            label={connection.label}
+            onLabelChange={onConnectionLabelChange ? (newLabel) => onConnectionLabelChange(connection.id, newLabel) : undefined}
           />
         )
       })}

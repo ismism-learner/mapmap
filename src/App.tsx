@@ -237,6 +237,15 @@ function App() {
     )
   }
 
+  // 处理连接线标签修改
+  const handleConnectionLabelChange = (connectionId: string, newLabel: string) => {
+    setConnections((prev) =>
+      prev.map((c) =>
+        c.id === connectionId ? { ...c, label: newLabel } : c
+      )
+    )
+  }
+
   // 切换自动连接模式
   const handleToggleAutoConnect = () => {
     setAutoConnect(!autoConnect)
@@ -378,6 +387,7 @@ function App() {
           isFlatMode={isFlatMode}
           useOptimizedRendering={true}
           onLabelDrag={handleLabelDrag}
+          onConnectionLabelChange={handleConnectionLabelChange}
         />
       </Canvas>
 
