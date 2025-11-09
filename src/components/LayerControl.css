@@ -8,7 +8,7 @@
   color: white;
   min-width: 200px;
   max-width: 280px;
-  z-index: 10;
+  z-index: 100; /* 交互控件层级 - 与搜索栏、信息卡同级 */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
