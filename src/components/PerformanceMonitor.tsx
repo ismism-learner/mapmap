@@ -1,26 +1,16 @@
 import { useEffect, useState } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
 
 /**
  * 性能监控组件
  *
  * 显示：
  * - FPS（帧率）
- * - 渲染时间
- * - 内存使用（如果可用）
- * - Draw calls
- * - 三角形数量
+ * - 帧时间
  */
 function PerformanceMonitor() {
-  const { gl } = useThree()
   const [stats, setStats] = useState({
     fps: 0,
-    frameTime: 0,
-    drawCalls: 0,
-    triangles: 0,
-    points: 0,
-    lines: 0,
-    memory: 0
+    frameTime: 0
   })
 
   const [visible, setVisible] = useState(false)
@@ -29,38 +19,35 @@ function PerformanceMonitor() {
   useEffect(() => {
     let frameCount = 0
     let lastTime = performance.now()
+    let animationFrameId: number
+
+    const updateFPS = () => {
+      frameCount++
+      animationFrameId = requestAnimationFrame(updateFPS)
+    }
 
     const interval = setInterval(() => {
       const currentTime = performance.now()
       const deltaTime = currentTime - lastTime
       const fps = Math.round((frameCount * 1000) / deltaTime)
+      const frameTime = frameCount > 0 ? deltaTime / frameCount : 0
 
-      setStats(prev => ({
-        ...prev,
+      setStats({
         fps,
-        frameTime: deltaTime / frameCount
-      }))
+        frameTime
+      })
 
       frameCount = 0
       lastTime = currentTime
     }, 1000)
 
-    return () => clearInterval(interval)
+    animationFrameId = requestAnimationFrame(updateFPS)
+
+    return () => {
+      clearInterval(interval)
+      cancelAnimationFrame(animationFrameId)
+    }
   }, [])
-
-  // 每帧更新统计
-  useFrame(() => {
-    const info = gl.info
-
-    setStats(prev => ({
-      ...prev,
-      drawCalls: info.render.calls,
-      triangles: info.render.triangles,
-      points: info.render.points,
-      lines: info.render.lines,
-      memory: (info.memory as any)?.geometries || 0
-    }))
-  })
 
   // 监听快捷键 Shift+P 切换显示
   useEffect(() => {
@@ -154,11 +141,6 @@ function PerformanceMonitor() {
         suffix="ms"
         color={stats.frameTime <= 16.67 ? '#4ade80' : stats.frameTime <= 33.33 ? '#fbbf24' : '#ef4444'}
       />
-      <StatRow label="Draw Calls" value={stats.drawCalls} suffix="" />
-      <StatRow label="三角形" value={stats.triangles.toLocaleString()} suffix="" />
-      {stats.points > 0 && <StatRow label="点" value={stats.points.toLocaleString()} suffix="" />}
-      {stats.lines > 0 && <StatRow label="线" value={stats.lines.toLocaleString()} suffix="" />}
-      {stats.memory > 0 && <StatRow label="几何体" value={stats.memory} suffix="" />}
 
       <div
         style={{
