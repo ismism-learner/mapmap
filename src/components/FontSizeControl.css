@@ -1,0 +1,167 @@
+/* 字体大小控制面板 - 磨砂玻璃风格 */
+.font-size-control {
+  position: fixed;
+  top: 90px;
+  right: 20px;
+  width: 350px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  z-index: 950;
+  overflow: hidden;
+}
+
+.font-size-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.font-size-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.font-size-close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.font-size-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.font-size-content {
+  padding: 20px;
+}
+
+.font-size-section {
+  margin-bottom: 24px;
+}
+
+.font-size-section:last-of-type {
+  margin-bottom: 0;
+}
+
+.font-size-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.font-size-value {
+  color: #00ffff;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.font-size-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.font-size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #00ffff;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+  transition: all 0.2s ease;
+}
+
+.font-size-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.8);
+}
+
+.font-size-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #00ffff;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+  transition: all 0.2s ease;
+}
+
+.font-size-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.8);
+}
+
+.font-size-marks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.font-size-actions {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.font-size-reset {
+  width: 100%;
+  padding: 10px 20px;
+  background: rgba(0, 255, 255, 0.2);
+  border: 1px solid rgba(0, 255, 255, 0.5);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #00ffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.font-size-reset:hover {
+  background: rgba(0, 255, 255, 0.3);
+  border-color: #00ffff;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .font-size-control {
+    width: calc(100% - 40px);
+    right: 20px;
+    left: 20px;
+  }
+}

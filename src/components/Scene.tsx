@@ -33,6 +33,8 @@ interface SceneProps {
   useOptimizedRendering?: boolean
   onLabelDrag?: (markerId: string, offset: { x: number; y: number }) => void
   onConnectionLabelChange?: (connectionId: string, newLabel: string) => void
+  labelFontSize?: number
+  dollarFontSize?: number
 }
 
 function Scene({
@@ -51,7 +53,9 @@ function Scene({
   isFlatMode = false,
   useOptimizedRendering = true,
   onLabelDrag,
-  onConnectionLabelChange
+  onConnectionLabelChange,
+  labelFontSize = 20,
+  dollarFontSize = 25
 }: SceneProps) {
   const { flyTo } = useCameraControls()
   const globeRef = useRef<Mesh>(null)
@@ -170,6 +174,7 @@ function Scene({
                 labelOffset={marker.labelOffset}
                 onLabelDrag={onLabelDrag ? (offset) => onLabelDrag(marker.id, offset) : undefined}
                 videoInfo={marker.info.videoInfo}
+                fontSize={labelFontSize}
               />
             )
           })}
@@ -195,6 +200,8 @@ function Scene({
             label={connection.label}
             onLabelChange={onConnectionLabelChange ? (newLabel) => onConnectionLabelChange(connection.id, newLabel) : undefined}
             globeRef={globeRef}
+            labelFontSize={labelFontSize}
+            dollarFontSize={dollarFontSize}
           />
         )
       })}

@@ -14,6 +14,7 @@ import AdminPanel from './components/AdminPanel'
 import ManagementPanel from './components/ManagementPanel'
 import UnifiedToolbar from './components/UnifiedToolbar'
 import ImageUpload from './components/ImageUpload'
+import FontSizeControl from './components/FontSizeControl'
 import { City, loadCities } from './utils/cityUtils'
 import { TextureConfig, loadTextures } from './types/texture'
 import {
@@ -75,6 +76,11 @@ function App() {
   const [managementOpen, setManagementOpen] = useState(false)
   const [imageUploadOpen, setImageUploadOpen] = useState(false)
   const [adminPanelOpen, setAdminPanelOpen] = useState(false)
+  const [fontSizeOpen, setFontSizeOpen] = useState(false)
+
+  // 字体大小状态
+  const [labelFontSize, setLabelFontSize] = useState(20) // 标签字体大小
+  const [dollarFontSize, setDollarFontSize] = useState(25) // 美元符号字体大小
 
   const [flyToCity, setFlyToCity] = useState<{ lon: number; lat: number } | null>(null)
 
@@ -84,6 +90,7 @@ function App() {
   const handleToggleManagement = () => setManagementOpen(!managementOpen)
   const handleToggleImageUpload = () => setImageUploadOpen(!imageUploadOpen)
   const handleToggleAdminPanel = () => setAdminPanelOpen(!adminPanelOpen)
+  const handleToggleFontSize = () => setFontSizeOpen(!fontSizeOpen)
 
   // 监听地图模式切换，触发过渡动画
   useEffect(() => {
@@ -507,6 +514,8 @@ function App() {
           useOptimizedRendering={true}
           onLabelDrag={handleLabelDrag}
           onConnectionLabelChange={handleConnectionLabelChange}
+          labelFontSize={labelFontSize}
+          dollarFontSize={dollarFontSize}
         />
       </Canvas>
 
@@ -533,6 +542,7 @@ function App() {
           onToggleManagement={handleToggleManagement}
           onToggleImageUpload={handleToggleImageUpload}
           onToggleAdminPanel={handleToggleAdminPanel}
+          onToggleFontSize={handleToggleFontSize}
           autoConnectEnabled={autoConnect}
           manualConnectEnabled={manualConnectMode}
           eventInputOpen={eventInputOpen}
@@ -540,6 +550,7 @@ function App() {
           managementOpen={managementOpen}
           imageUploadOpen={imageUploadOpen}
           adminPanelOpen={adminPanelOpen}
+          fontSizeOpen={fontSizeOpen}
         />
       )}
 
@@ -611,6 +622,17 @@ function App() {
           connections={connections}
           onImportData={handleImportData}
           onClose={() => setAdminPanelOpen(false)}
+        />
+      )}
+
+      {/* 字体大小控制面板 */}
+      {fontSizeOpen && isAdminMode && (
+        <FontSizeControl
+          labelFontSize={labelFontSize}
+          dollarFontSize={dollarFontSize}
+          onLabelFontSizeChange={setLabelFontSize}
+          onDollarFontSizeChange={setDollarFontSize}
+          onClose={() => setFontSizeOpen(false)}
         />
       )}
 
