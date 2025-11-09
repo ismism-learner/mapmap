@@ -169,6 +169,7 @@ function Scene({
                 isFlat={isFlatMode}
                 labelOffset={marker.labelOffset}
                 onLabelDrag={onLabelDrag ? (offset) => onLabelDrag(marker.id, offset) : undefined}
+                videoInfo={marker.info.videoInfo}
               />
             )
           })}
