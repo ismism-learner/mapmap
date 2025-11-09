@@ -76,21 +76,12 @@ const AnchoredEventPanel = memo(function AnchoredEventPanel({
             </div>
 
             <div className="event-card-content">
+              {/* 描述文本（主要内容区） */}
               {event.marker.info.description && (
                 <p className="event-description">{event.marker.info.description}</p>
               )}
 
-              <div className="event-meta">
-                <div className="event-location">
-                  <LocationIcon size={14} /> {event.marker.latitude.toFixed(2)}°, {event.marker.longitude.toFixed(2)}°
-                </div>
-                {event.marker.createdAt && (
-                  <div className="event-time">
-                    <ClockIcon size={14} /> {new Date(event.marker.createdAt).toLocaleDateString('zh-CN')}
-                  </div>
-                )}
-              </div>
-
+              {/* 图片展示 */}
               {event.marker.info.images.length > 0 && (
                 <div className="event-images">
                   {event.marker.info.images.slice(0, 3).map((img) => (
@@ -98,12 +89,13 @@ const AnchoredEventPanel = memo(function AnchoredEventPanel({
                       key={img.id}
                       src={img.url}
                       alt={img.alt}
-                      className="event-image-thumb"
+                      className="event-image"
                     />
                   ))}
                 </div>
               )}
 
+              {/* 链接按钮 */}
               {event.marker.info.links.length > 0 && (
                 <div className="event-links">
                   {event.marker.info.links.map((link) => (
@@ -112,20 +104,38 @@ const AnchoredEventPanel = memo(function AnchoredEventPanel({
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="event-link"
+                      className="event-link-button"
+                      title={link.title || link.url}
                     >
-                      <LinkIcon size={14} /> {link.title || link.url}
+                      <LinkIcon size={16} />
+                      <span className="link-text">{link.title || '查看链接'}</span>
                     </a>
                   ))}
                 </div>
               )}
 
-              <button
-                className="event-edit-btn"
-                onClick={() => onEdit(event.marker)}
-              >
-                <EditIcon size={14} /> 编辑详情
-              </button>
+              {/* 底部信息栏：位置 + 时间 + 编辑按钮 */}
+              <div className="event-footer">
+                <div className="event-meta-compact">
+                  <div className="event-location-compact">
+                    <LocationIcon size={12} />
+                    <span>{event.marker.latitude.toFixed(2)}°, {event.marker.longitude.toFixed(2)}°</span>
+                  </div>
+                  {event.marker.createdAt && (
+                    <div className="event-time-compact">
+                      <ClockIcon size={12} />
+                      <span>{new Date(event.marker.createdAt).toLocaleDateString('zh-CN')}</span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  className="event-edit-btn-compact"
+                  onClick={() => onEdit(event.marker)}
+                  title="编辑详情"
+                >
+                  <EditIcon size={16} />
+                </button>
+              </div>
             </div>
 
             {/* 锚点元素，用于连接线的起点 */}
