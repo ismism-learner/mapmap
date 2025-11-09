@@ -2,14 +2,16 @@
   position: absolute;
   top: 120px;
   left: 20px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 8px;
-  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
-  min-width: 200px;
-  max-width: 280px;
-  z-index: 100; /* 交互控件层级 - 与搜索栏、信息卡同级 */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  min-width: 220px;
+  max-width: 300px;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .layer-control-header {

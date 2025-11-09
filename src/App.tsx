@@ -74,6 +74,7 @@ function App() {
   const [layerControlOpen, setLayerControlOpen] = useState(false)
   const [managementOpen, setManagementOpen] = useState(false)
   const [imageUploadOpen, setImageUploadOpen] = useState(false)
+  const [adminPanelOpen, setAdminPanelOpen] = useState(false)
 
   const [flyToCity, setFlyToCity] = useState<{ lon: number; lat: number } | null>(null)
 
@@ -82,6 +83,7 @@ function App() {
   const handleToggleLayerControl = () => setLayerControlOpen(!layerControlOpen)
   const handleToggleManagement = () => setManagementOpen(!managementOpen)
   const handleToggleImageUpload = () => setImageUploadOpen(!imageUploadOpen)
+  const handleToggleAdminPanel = () => setAdminPanelOpen(!adminPanelOpen)
 
   // 监听地图模式切换，触发过渡动画
   useEffect(() => {
@@ -530,12 +532,14 @@ function App() {
           onToggleLayerControl={handleToggleLayerControl}
           onToggleManagement={handleToggleManagement}
           onToggleImageUpload={handleToggleImageUpload}
+          onToggleAdminPanel={handleToggleAdminPanel}
           autoConnectEnabled={autoConnect}
           manualConnectEnabled={manualConnectMode}
           eventInputOpen={eventInputOpen}
           layerControlOpen={layerControlOpen}
           managementOpen={managementOpen}
           imageUploadOpen={imageUploadOpen}
+          adminPanelOpen={adminPanelOpen}
         />
       )}
 
@@ -599,13 +603,16 @@ function App() {
       {isAdminMode && <ClickDebugger />}
 
       {/* 管理员面板 */}
-      <AdminPanel
-        isAdminMode={isAdminMode}
-        onToggleAdminMode={handleToggleAdminMode}
-        customMarkers={customMarkers}
-        connections={connections}
-        onImportData={handleImportData}
-      />
+      {adminPanelOpen && (
+        <AdminPanel
+          isAdminMode={isAdminMode}
+          onToggleAdminMode={handleToggleAdminMode}
+          customMarkers={customMarkers}
+          connections={connections}
+          onImportData={handleImportData}
+          onClose={() => setAdminPanelOpen(false)}
+        />
+      )}
 
       {/* 球形展开/收缩过渡效果 */}
       <UnfoldTransition

@@ -9,12 +9,14 @@ interface UnifiedToolbarProps {
   onToggleLayerControl: () => void
   onToggleManagement: () => void
   onToggleImageUpload: () => void
+  onToggleAdminPanel: () => void
   autoConnectEnabled: boolean
   manualConnectEnabled: boolean
   eventInputOpen: boolean
   layerControlOpen: boolean
   managementOpen: boolean
   imageUploadOpen: boolean
+  adminPanelOpen: boolean
 }
 
 /**
@@ -29,12 +31,14 @@ function UnifiedToolbar({
   onToggleLayerControl,
   onToggleManagement,
   onToggleImageUpload,
+  onToggleAdminPanel,
   autoConnectEnabled,
   manualConnectEnabled,
   eventInputOpen,
   layerControlOpen,
   managementOpen,
-  imageUploadOpen
+  imageUploadOpen,
+  adminPanelOpen
 }: UnifiedToolbarProps) {
   const [expanded, setExpanded] = useState(true)
 
@@ -137,6 +141,19 @@ function UnifiedToolbar({
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
               <circle cx="8.5" cy="8.5" r="1.5" />
               <polyline points="21 15 16 10 5 21" />
+            </svg>
+          </button>
+
+          {/* 设置/管理员面板 */}
+          <button
+            className={`toolbar-btn ${adminPanelOpen ? 'active' : ''}`}
+            onClick={onToggleAdminPanel}
+            title="设置"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3" />
+              <path d="m19.07 4.93-4.24 4.24m0 5.66 4.24 4.24M4.93 4.93l4.24 4.24m0 5.66-4.24 4.24" />
             </svg>
           </button>
         </div>

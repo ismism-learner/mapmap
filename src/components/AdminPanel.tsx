@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { CustomMarker, MarkerConnection } from '../types/customMarker'
 import './AdminPanel.css'
 
@@ -8,10 +7,11 @@ interface AdminPanelProps {
   customMarkers: CustomMarker[]
   connections: MarkerConnection[]
   onImportData: (data: { markers: CustomMarker[], connections: MarkerConnection[] }) => void
+  onClose: () => void
 }
 
 /**
- * 管理员面板
+ * 管理员面板 - 受控组件
  * - 切换管理员/用户模式
  * - 导出数据到JSON
  * - 从JSON导入数据
@@ -21,9 +21,9 @@ function AdminPanel({
   onToggleAdminMode,
   customMarkers,
   connections,
-  onImportData
+  onImportData,
+  onClose
 }: AdminPanelProps) {
-  const [isOpen, setIsOpen] = useState(false)
 
   // 导出数据到JSON文件
   const handleExport = () => {
@@ -94,20 +94,12 @@ function AdminPanel({
     input.click()
   }
 
-  if (!isOpen) {
-    return (
-      <button className="admin-toggle" onClick={() => setIsOpen(true)}>
-        ⚙️
-      </button>
-    )
-  }
-
   return (
     <div className="admin-panel">
       <div className="admin-header">
-        <h3>管理面板</h3>
-        <button className="admin-close" onClick={() => setIsOpen(false)}>
-          ✕
+        <h3>设置</h3>
+        <button className="admin-close" onClick={onClose}>
+          ×
         </button>
       </div>
 
@@ -124,8 +116,8 @@ function AdminPanel({
           </label>
           <p className="admin-mode-hint">
             {isAdminMode
-              ? '🔓 当前可以编辑和修改内容'
-              : '🔒 当前为只读模式，无法编辑'}
+              ? '当前可以编辑和修改内容'
+              : '当前为只读模式，无法编辑'}
           </p>
         </div>
 
@@ -143,20 +135,20 @@ function AdminPanel({
               onClick={handleExport}
               disabled={customMarkers.length === 0}
             >
-              📥 导出数据
+              导出数据
             </button>
             <button
               className="admin-btn admin-btn-import"
               onClick={handleImport}
               disabled={!isAdminMode}
             >
-              📤 导入数据
+              导入数据
             </button>
           </div>
 
           {!isAdminMode && (
             <p className="admin-warning">
-              ⚠️ 需要开启管理员模式才能导入数据
+              需要开启管理员模式才能导入数据
             </p>
           )}
         </div>
