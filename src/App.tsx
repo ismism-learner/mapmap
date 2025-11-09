@@ -22,6 +22,7 @@ import {
 } from './types/customMarker'
 import { parseEventText, geocodeEvents } from './utils/eventParser'
 import { loadCountries } from './utils/translationUtils'
+import { fetchBilibiliVideoInfo } from './utils/bilibiliUtils'
 import './App.css'
 
 function App() {
@@ -296,18 +297,34 @@ function App() {
     console.log(`📍 地理编码结果: ${geocodedMarkers.length} 个标记, ${geocodedConnections.length} 个连接`)
 
     // 创建标记（从独立图钉）
-    const newMarkers: CustomMarker[] = geocodedMarkers.map(gm => ({
-      id: generateId(),
-      latitude: gm.latitude,
-      longitude: gm.longitude,
-      info: {
-        title: gm.title,
-        description: gm.description,
-        links: [],
-        images: []
-      },
-      createdAt: Date.now()
-    }))
+    const newMarkers: CustomMarker[] = []
+
+    for (const gm of geocodedMarkers) {
+      let videoInfo = undefined
+
+      // 如果有B站视频链接，自动获取视频信息
+      if (gm.videoUrl) {
+        console.log(`📺 正在获取B站视频信息: ${gm.videoUrl}`)
+        videoInfo = await fetchBilibiliVideoInfo(gm.videoUrl)
+        if (videoInfo) {
+          console.log(`✅ 成功获取视频: ${videoInfo.title}`)
+        }
+      }
+
+      newMarkers.push({
+        id: generateId(),
+        latitude: gm.latitude,
+        longitude: gm.longitude,
+        info: {
+          title: videoInfo?.title || gm.title,
+          description: gm.description,
+          links: [],
+          images: [],
+          videoInfo: videoInfo || undefined
+        },
+        createdAt: Date.now()
+      })
+    }
 
     // 创建连接线的标记
     const connectionMarkerMap = new Map<string, CustomMarker>()

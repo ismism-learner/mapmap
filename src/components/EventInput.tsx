@@ -36,7 +36,9 @@ function EventInput({ onCreateEvents }: EventInputProps) {
   const handleExample = () => {
     const example = `2023-01-01;国事访问;美国,San Francisco;会见;中国,北京
 2024-03-15;经贸合作;德国,Berlin;协议;日本,Tokyo
-;2024-05-20;科技峰会;中国,上海;发布新AI模型`
+;2024-05-20;科技峰会;中国,上海;发布新AI模型
+中国,北京;https://www.bilibili.com/video/BV1xx411c7mu
+美国,纽约;BV1Ab411q7kE`
     setText(example)
   }
 
@@ -60,6 +62,7 @@ function EventInput({ onCreateEvents }: EventInputProps) {
       <div className="event-input-help">
         <p><strong>连接线格式：</strong> 时间;事件名;地点1;关系;地点2</p>
         <p><strong>图钉格式：</strong> ;时间;事件名;地点;描述</p>
+        <p><strong>视频图钉：</strong> 地点;B站链接</p>
         <button className="event-input-example" onClick={handleExample}>
           填入示例
         </button>

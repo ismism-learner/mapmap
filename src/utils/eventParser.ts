@@ -1,5 +1,6 @@
 import { City } from './cityUtils'
 import { smartTranslate } from './translationUtils'
+import { isBilibiliURL } from './bilibiliUtils'
 
 export interface ParsedConnection {
   type: 'connection'
@@ -18,12 +19,19 @@ export interface ParsedPin {
   description: string
 }
 
-export type ParsedEvent = ParsedConnection | ParsedPin
+export interface ParsedVideoPin {
+  type: 'videoPin'
+  location: string
+  videoUrl: string
+}
+
+export type ParsedEvent = ParsedConnection | ParsedPin | ParsedVideoPin
 
 /**
  * 解析单行事件文本
  * - 连接线格式：时间;事件名;地点1;关系;地点2
  * - 图钉格式：;时间;事件名;地点;描述
+ * - 视频图钉格式：地点;B站链接
  */
 export function parseEventLine(line: string): ParsedEvent | null {
   const trimmedLine = line.trim()
@@ -33,6 +41,15 @@ export function parseEventLine(line: string): ParsedEvent | null {
   }
 
   const parts = trimmedLine.split(';').map(p => p.trim())
+
+  // 视频图钉格式：地点;B站链接 (2个部分)
+  if (parts.length === 2 && isBilibiliURL(parts[1])) {
+    return {
+      type: 'videoPin',
+      location: parts[0],
+      videoUrl: parts[1]
+    }
+  }
 
   // 图钉格式：以分号开头，第一个元素为空
   if (parts[0] === '' && parts.length >= 5) {
@@ -182,6 +199,7 @@ export interface GeocodedMarker {
   title: string
   description: string
   time: string
+  videoUrl?: string // B站视频链接（可选）
 }
 
 export interface GeocodedConnection {
@@ -201,7 +219,20 @@ export async function geocodeEvents(
   const connections: GeocodedConnection[] = []
 
   for (const event of events) {
-    if (event.type === 'pin') {
+    if (event.type === 'videoPin') {
+      // 视频图钉：地点;B站链接
+      const coords = await geocodeLocation(event.location, cities)
+      if (coords) {
+        markers.push({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          title: event.location, // 使用地点作为临时标题
+          description: '',
+          time: '',
+          videoUrl: event.videoUrl
+        })
+      }
+    } else if (event.type === 'pin') {
       const coords = await geocodeLocation(event.location, cities)
       if (coords) {
         markers.push({
