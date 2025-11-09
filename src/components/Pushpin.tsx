@@ -78,27 +78,28 @@ function Pushpin({
       zIndexRange={[100, 0]}
     >
       <div
-        onClick={handleClick}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          cursor: 'pointer',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           transform: hovered ? 'scale(1.2)' : 'scale(1)',
           transition: 'transform 0.2s',
-          pointerEvents: 'auto',
+          pointerEvents: 'none',
         }}
       >
         {/* SVG图钉 */}
         <svg
+          onClick={handleClick}
           width={svgSize}
           height={svgSize}
           viewBox={`0 0 ${svgSize} ${svgSize}`}
           style={{
             filter: hovered ? 'drop-shadow(0 0 4px rgba(255, 68, 68, 0.8))' : 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))',
             transition: 'filter 0.2s',
+            cursor: 'pointer',
+            pointerEvents: 'auto',
           }}
         >
           {/* 外圈（图钉头部边缘） */}
