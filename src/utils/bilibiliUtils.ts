@@ -37,6 +37,7 @@ export function extractBVID(url: string): string | null {
 
 /**
  * 获取B站视频信息
+ * 使用 CORS 代理绕过浏览器跨域限制
  */
 export async function fetchBilibiliVideoInfo(urlOrBVID: string): Promise<BilibiliVideoInfo | null> {
   try {
@@ -46,10 +47,19 @@ export async function fetchBilibiliVideoInfo(urlOrBVID: string): Promise<Bilibil
       return null
     }
 
-    // 使用B站API获取视频信息
+    // 使用 CORS 代理访问B站API
     const apiUrl = `https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`
+    const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`
 
-    const response = await fetch(apiUrl)
+    console.log(`🔄 正在获取视频信息: ${bvid}`)
+
+    const response = await fetch(corsProxyUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      }
+    })
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`)
     }
@@ -58,7 +68,15 @@ export async function fetchBilibiliVideoInfo(urlOrBVID: string): Promise<Bilibil
 
     if (result.code !== 0) {
       console.error('❌ B站API返回错误:', result.message)
-      return null
+
+      // 降级方案：返回基本信息，让用户后续编辑
+      return {
+        bvid: bvid,
+        title: `视频 ${bvid}（请编辑标题）`,
+        cover: 'https://via.placeholder.com/200x120/000000/FFFFFF?text=Bilibili+Video',
+        author: '未知UP主',
+        url: `https://www.bilibili.com/video/${bvid}`
+      }
     }
 
     const data = result.data
@@ -72,6 +90,20 @@ export async function fetchBilibiliVideoInfo(urlOrBVID: string): Promise<Bilibil
     }
   } catch (error) {
     console.error('❌ 获取B站视频信息失败:', error)
+
+    // 降级方案：CORS 失败时返回基本信息
+    const bvid = extractBVID(urlOrBVID)
+    if (bvid) {
+      console.warn('⚠️ 使用降级方案：请手动编辑视频信息')
+      return {
+        bvid: bvid,
+        title: `视频 ${bvid}（请编辑标题）`,
+        cover: 'https://via.placeholder.com/200x120/1f1f1f/00a1d6?text=Bilibili',
+        author: '请编辑UP主',
+        url: `https://www.bilibili.com/video/${bvid}`
+      }
+    }
+
     return null
   }
 }
