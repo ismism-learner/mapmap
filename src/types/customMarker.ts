@@ -44,6 +44,12 @@ export interface MarkerConnection {
   id: string
   fromMarkerId: string
   toMarkerId: string
+  // 事件信息（可选）
+  eventInfo?: {
+    eventName: string      // 事件名称
+    time: string          // 时间
+    relationship?: string  // 关系描述
+  }
 }
 
 /**
