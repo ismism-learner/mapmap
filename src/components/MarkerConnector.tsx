@@ -125,8 +125,8 @@ function MarkerConnector({
       // 创建贝塞尔曲线
       const curve = new QuadraticBezierCurve3(startVec, controlPoint, endVec)
 
-      // 减少点数：从50降到20，大幅提升性能
-      const curvePoints = curve.getPoints(20)
+      // 极致优化：降到10个点，足够平滑且性能最佳
+      const curvePoints = curve.getPoints(10)
 
       // 标签位置：使用曲线在 t=0.5 处的实际点（曲线的真实中点）
       const actualMidpoint = curve.getPoint(0.5)
@@ -167,16 +167,18 @@ function MarkerConnector({
     }
   }
 
-  // 美元符号沿着曲线移动（性能优化：降低更新频率）
+  // 美元符号沿着曲线移动（极致性能优化）
   const frameCountRef = useRef(0)
+  const dollarPositionRef = useRef<Vector3>(new Vector3())
+
   useFrame((_state, delta) => {
-    // 每2帧更新一次，减少50%的计算量
+    // 每10帧更新一次，减少90%的计算量
     frameCountRef.current++
-    if (frameCountRef.current % 2 !== 0) return
+    if (frameCountRef.current % 10 !== 0) return
 
     if (points.length > 1) {
       // 更新进度（0到1循环）
-      progressRef.current += delta * 0.5 // 调整速度
+      progressRef.current += delta * 0.5
       if (progressRef.current > 1) {
         progressRef.current = 0
       }
@@ -189,9 +191,13 @@ function MarkerConnector({
       const currentPoint = points[index]
       const nextPoint = points[nextIndex]
 
-      // 线性插值获取当前位置
-      const position = new Vector3().lerpVectors(currentPoint, nextPoint, localProgress)
-      setDollarPosition(position.clone())
+      // 直接更新ref，避免触发React重渲染
+      dollarPositionRef.current.lerpVectors(currentPoint, nextPoint, localProgress)
+
+      // 仅在位置变化较大时才更新state（减少重渲染）
+      if (dollarPositionRef.current.distanceTo(dollarPosition) > 0.01) {
+        setDollarPosition(dollarPositionRef.current.clone())
+      }
     }
   })
 
