@@ -18,6 +18,8 @@ interface LayerControlProps {
   textures?: TextureConfig[]
   selectedTexture?: string
   onTextureChange?: (textureId: string) => void
+  isFlatMode?: boolean
+  onMapModeToggle?: () => void
 }
 
 /**
@@ -34,7 +36,9 @@ function LayerControl({
   onLightingToggle,
   textures = [],
   selectedTexture,
-  onTextureChange
+  onTextureChange,
+  isFlatMode = false,
+  onMapModeToggle
 }: LayerControlProps) {
   const [isOpen, setIsOpen] = useState(true)
 
@@ -101,6 +105,24 @@ function LayerControl({
                   />
                   <span className="layer-icon">💡</span>
                   <span className="layer-name">真实光照</span>
+                </label>
+              </div>
+            </>
+          )}
+
+          {/* 地图模式切换 */}
+          {onMapModeToggle && (
+            <>
+              <div className="layer-divider" />
+              <div className="layer-item">
+                <label className="layer-label">
+                  <input
+                    type="checkbox"
+                    checked={isFlatMode}
+                    onChange={onMapModeToggle}
+                  />
+                  <span className="layer-icon">🗺️</span>
+                  <span className="layer-name">平面地图模式</span>
                 </label>
               </div>
             </>

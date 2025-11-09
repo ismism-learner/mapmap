@@ -1,7 +1,7 @@
-import { useRef, useState } from 'react'
-import { Group, Mesh } from 'three'
+import { useState, useMemo } from 'react'
+import { Mesh } from 'three'
 import { Html } from '@react-three/drei'
-import { lonLatToVector3 } from '../utils/geoUtils'
+import { lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
 
 interface PushpinProps {
   latitude: number
@@ -11,13 +11,18 @@ interface PushpinProps {
   radius?: number
   color?: string
   globeRef?: React.RefObject<Mesh>
+  isFlat?: boolean
+  mapWidth?: number
+  mapHeight?: number
 }
 
 /**
- * 统一样式的图钉组件
- * - 标准化的图钉外观
+ * 2D SVG图钉组件
+ * - 使用SVG模拟3D效果，性能更好
+ * - 通过连接线角度变化模拟立体感
  * - 支持点击和悬停
  * - 显示标签
+ * - 支持球形和平面两种模式
  */
 function Pushpin({
   latitude,
@@ -26,77 +31,133 @@ function Pushpin({
   onClick,
   radius = 1.01,
   color = '#ff4444',
-  globeRef
+  globeRef,
+  isFlat = false,
+  mapWidth = 4,
+  mapHeight = 2
 }: PushpinProps) {
-  const groupRef = useRef<Group>(null)
   const [hovered, setHovered] = useState(false)
 
-  const { x, y, z } = lonLatToVector3(longitude, latitude, radius)
+  // 根据模式计算位置
+  const position = useMemo(() => {
+    if (isFlat) {
+      return lonLatToFlatPosition(longitude, latitude, mapWidth, mapHeight)
+    } else {
+      return lonLatToVector3(longitude, latitude, radius)
+    }
+  }, [isFlat, longitude, latitude, radius, mapWidth, mapHeight])
 
-  const handleClick = (e: any) => {
+  const { x, y, z } = position
+
+  // 根据位置计算模拟3D的角度
+  // 使用经纬度来计算一个角度，模拟光照方向
+  const highlightAngle = useMemo(() => {
+    // 使用经度和纬度的组合来计算角度
+    // 这样每个图钉的"光照"角度都不同，增强立体感
+    const baseAngle = (longitude + 180) * (Math.PI / 180)
+    const latitudeFactor = latitude * (Math.PI / 180)
+    return baseAngle + latitudeFactor * 0.3
+  }, [longitude, latitude])
+
+  // SVG图钉配置
+  const pinConfig = {
+    outerRadius: 10,      // 外圈半径
+    innerRadius: 6,       // 内圈半径
+    strokeWidth: 2,       // 外圈描边宽度
+    highlightWidth: 1.5,  // 高光线宽度
+  }
+
+  // 计算高光线的终点坐标
+  const highlightEnd = useMemo(() => {
+    const cx = pinConfig.outerRadius + pinConfig.strokeWidth
+    const cy = pinConfig.outerRadius + pinConfig.strokeWidth
+    const px = cx + pinConfig.outerRadius * Math.cos(highlightAngle)
+    const py = cy + pinConfig.outerRadius * Math.sin(highlightAngle)
+    return { px, py }
+  }, [highlightAngle, pinConfig.outerRadius, pinConfig.strokeWidth])
+
+  const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (onClick) {
       onClick()
     }
   }
 
+  const svgSize = (pinConfig.outerRadius + pinConfig.strokeWidth) * 2
+
   return (
-    <group ref={groupRef} position={[x, y, z]}>
-      {/* 图钉头部（球体） */}
-      <mesh
-        position={[0, 0.015, 0]}
+    <Html
+      position={[x, y, z]}
+      center
+      occlude={globeRef ? [globeRef] : undefined}
+      style={{
+        transition: 'opacity 0.2s',
+        pointerEvents: 'auto',
+      }}
+    >
+      <div
         onClick={handleClick}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          cursor: 'pointer',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          transform: hovered ? 'scale(1.2)' : 'scale(1)',
+          transition: 'transform 0.2s',
+        }}
       >
-        <sphereGeometry args={[0.008, 16, 16]} />
-        <meshStandardMaterial
-          color={hovered ? '#ff6b6b' : color}
-          emissive={color}
-          emissiveIntensity={hovered ? 0.8 : 0.3}
-          metalness={0.6}
-          roughness={0.2}
-        />
-      </mesh>
-
-      {/* 图钉针尖（圆锥） */}
-      <mesh
-        position={[0, 0.007, 0]}
-        rotation={[Math.PI, 0, 0]}
-        onClick={handleClick}
-      >
-        <coneGeometry args={[0.003, 0.015, 8]} />
-        <meshStandardMaterial
-          color={hovered ? '#ffaaaa' : '#ffffff'}
-          metalness={0.8}
-          roughness={0.1}
-        />
-      </mesh>
-
-      {/* 图钉杆（细柱） */}
-      <mesh
-        position={[0, 0, 0]}
-        onClick={handleClick}
-      >
-        <cylinderGeometry args={[0.0015, 0.0015, 0.015, 8]} />
-        <meshStandardMaterial
-          color="#cccccc"
-          metalness={0.9}
-          roughness={0.1}
-        />
-      </mesh>
-
-      {/* 悬停或有标签时显示 */}
-      {(hovered || label) && label && (
-        <Html
-          position={[0, 0.025, 0]}
-          center
-          occlude={globeRef ? [globeRef] : undefined}
+        {/* SVG图钉 */}
+        <svg
+          width={svgSize}
+          height={svgSize}
+          viewBox={`0 0 ${svgSize} ${svgSize}`}
           style={{
-            transition: 'opacity 0.2s',
-            pointerEvents: 'none',
+            filter: hovered ? 'drop-shadow(0 0 4px rgba(255, 68, 68, 0.8))' : 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))',
+            transition: 'filter 0.2s',
           }}
         >
+          {/* 外圈（图钉头部边缘） */}
+          <circle
+            cx={pinConfig.outerRadius + pinConfig.strokeWidth}
+            cy={pinConfig.outerRadius + pinConfig.strokeWidth}
+            r={pinConfig.outerRadius}
+            fill="none"
+            stroke="#333"
+            strokeWidth={pinConfig.strokeWidth}
+          />
+
+          {/* 内圈（图钉头部中心） */}
+          <circle
+            cx={pinConfig.outerRadius + pinConfig.strokeWidth}
+            cy={pinConfig.outerRadius + pinConfig.strokeWidth}
+            r={pinConfig.innerRadius}
+            fill={hovered ? '#ff6b6b' : color}
+          />
+
+          {/* 连接线（模拟高光/3D效果） */}
+          <line
+            x1={pinConfig.outerRadius + pinConfig.strokeWidth}
+            y1={pinConfig.outerRadius + pinConfig.strokeWidth}
+            x2={highlightEnd.px}
+            y2={highlightEnd.py}
+            stroke={hovered ? '#ffffff' : 'rgba(255, 255, 255, 0.8)'}
+            strokeWidth={pinConfig.highlightWidth}
+            strokeLinecap="round"
+          />
+
+          {/* 中心点（增强立体感） */}
+          <circle
+            cx={pinConfig.outerRadius + pinConfig.strokeWidth}
+            cy={pinConfig.outerRadius + pinConfig.strokeWidth}
+            r={2}
+            fill="rgba(0, 0, 0, 0.2)"
+          />
+        </svg>
+
+        {/* 标签 */}
+        {(hovered || label) && label && (
           <div
             style={{
               background: 'rgba(0, 0, 0, 0.85)',
@@ -106,17 +167,17 @@ function Pushpin({
               fontSize: '11px',
               fontWeight: '500',
               whiteSpace: 'nowrap',
-              pointerEvents: 'none',
+              marginTop: '4px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
               border: '1px solid rgba(255,255,255,0.2)',
-              transform: 'scale(1)',
+              pointerEvents: 'none',
             }}
           >
             {label}
           </div>
-        </Html>
-      )}
-    </group>
+        )}
+      </div>
+    </Html>
   )
 }
 

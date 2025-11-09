@@ -106,3 +106,26 @@ export function vector3ToLonLat(x: number, y: number, z: number) {
 
   return { latitude, longitude }
 }
+
+/**
+ * 将经纬度转换为平面地图坐标
+ * @param lon - 经度 (-180 to 180)
+ * @param lat - 纬度 (-90 to 90)
+ * @param mapWidth - 地图宽度（默认4）
+ * @param mapHeight - 地图高度（默认2）
+ */
+export function lonLatToFlatPosition(
+  lon: number,
+  lat: number,
+  mapWidth: number = 4,
+  mapHeight: number = 2
+) {
+  // 等距圆柱投影
+  // 经度 -180 到 180 映射到 x: -mapWidth/2 到 mapWidth/2
+  // 纬度 -90 到 90 映射到 y: -mapHeight/2 到 mapHeight/2
+  const x = (lon / 180) * (mapWidth / 2)
+  const y = (lat / 90) * (mapHeight / 2)
+  const z = 0.01 // 略微抬高以避免z-fighting
+
+  return { x, y, z }
+}
