@@ -10,6 +10,7 @@ import UnfoldTransition from './components/UnfoldTransition'
 import EventInput from './components/EventInput'
 import PerformanceMonitor from './components/PerformanceMonitor'
 import MarkerStressTest from './components/MarkerStressTest'
+import ClickDebugger from './components/ClickDebugger'
 import { City, loadCities } from './utils/cityUtils'
 import { TextureConfig, loadTextures } from './types/texture'
 import {
@@ -422,6 +423,9 @@ function App() {
 
       {/* 压力测试工具 */}
       <MarkerStressTest onGenerateMarkers={handleGenerateTestMarkers} />
+
+      {/* 点击调试工具 */}
+      <ClickDebugger />
 
       {/* 球形展开/收缩过渡效果 */}
       <UnfoldTransition
