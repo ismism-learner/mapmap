@@ -22,7 +22,7 @@ interface SceneProps {
   onCustomMarkerClick: (marker: CustomMarker) => void
   onDoubleClick: (latitude: number, longitude: number) => void
   flyToCity: { lon: number; lat: number } | null
-  isConnectMode?: boolean
+  manualConnectMode?: boolean
   selectedMarkerForConnect?: CustomMarker | null
 }
 
@@ -35,7 +35,7 @@ function Scene({
   onCustomMarkerClick,
   onDoubleClick,
   flyToCity,
-  isConnectMode = false,
+  manualConnectMode = false,
   selectedMarkerForConnect = null
 }: SceneProps) {
   const { flyTo } = useCameraControls()
@@ -89,15 +89,16 @@ function Scene({
 
       {/* 自定义图钉标记 */}
       {customMarkers.map((marker) => {
-        const isSelected = isConnectMode && selectedMarkerForConnect?.id === marker.id
+        const isSelected = manualConnectMode && selectedMarkerForConnect?.id === marker.id
         return (
           <Pushpin
             key={marker.id}
             latitude={marker.latitude}
             longitude={marker.longitude}
-            label={isConnectMode ? (isSelected ? '✓ 已选中' : marker.info.title) : marker.info.title}
+            label={manualConnectMode ? (isSelected ? '✓ 已选中' : marker.info.title) : marker.info.title}
             onClick={() => onCustomMarkerClick(marker)}
             color={isSelected ? '#00ff00' : '#ff4444'}
+            globeRef={globeRef}
           />
         )
       })}
