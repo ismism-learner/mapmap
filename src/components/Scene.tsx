@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import { Mesh } from 'three'
 import { ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
@@ -78,6 +78,32 @@ function Scene({
 }: SceneProps) {
   const { flyTo } = useCameraControls()
   const globeRef = useRef<Mesh>(null)
+
+  // 相机移动状态检测（性能优化：移动时隐藏连接线）
+  const [isCameraMoving, setIsCameraMoving] = useState(false)
+  const moveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // 相机变化处理：开始移动时隐藏连接线，停止后200ms显示
+  const handleCameraChange = useCallback(() => {
+    // 标记为正在移动并清空连接线（性能优化）
+    if (!isCameraMoving) {
+      setIsCameraMoving(true)
+      // 立即清空连接线，避免移动时的计算和渲染
+      if (onConnectorLinesUpdate) {
+        onConnectorLinesUpdate([])
+      }
+    }
+
+    // 清除之前的定时器
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current)
+    }
+
+    // 200ms后如果没有新的移动，则认为已停止
+    moveTimeoutRef.current = setTimeout(() => {
+      setIsCameraMoving(false)
+    }, 200)
+  }, [isCameraMoving, onConnectorLinesUpdate])
 
   // 当 flyToCity 改变时，执行相机动画
   if (flyToCity && !isFlatMode) {
@@ -242,8 +268,8 @@ function Scene({
         speed={1}
       />
 
-      {/* 锚定事件连接线坐标计算器 */}
-      {anchoredEvents.length > 0 && onConnectorLinesUpdate && (
+      {/* 锚定事件连接线坐标计算器 - 只在相机静止时计算，大幅提升性能 */}
+      {anchoredEvents.length > 0 && onConnectorLinesUpdate && !isCameraMoving && (
         <ConnectorCalculator
           events={anchoredEvents}
           onUpdate={onConnectorLinesUpdate}
@@ -259,6 +285,7 @@ function Scene({
           mapHeight={2}
           minZoom={1.5}
           maxZoom={12}
+          onChange={handleCameraChange}
         />
       ) : (
         /* 球形模式：旋转控制 */
@@ -268,6 +295,7 @@ function Scene({
           enableRotate={true}
           zoomSpeed={0.6}
           rotateSpeed={0.4}
+          onChange={handleCameraChange}
         />
       )}
     </>
