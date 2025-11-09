@@ -284,6 +284,7 @@ function Scene({
       {anchoredEvents.length > 0 && onConnectorLinesUpdate && !isCameraMoving && (
         <ConnectorCalculator
           events={anchoredEvents}
+          markers={customMarkers}
           onUpdate={onConnectorLinesUpdate}
           isFlatMode={isFlatMode}
         />

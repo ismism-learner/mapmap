@@ -2,11 +2,13 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useRef } from 'react'
 import { Vector3 } from 'three'
 import { AnchoredEvent } from './AnchoredEventPanel'
+import { CustomMarker } from '../types/customMarker'
 import { ConnectorLine } from './DynamicConnector'
 import { lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
 
 interface ConnectorCalculatorProps {
   events: AnchoredEvent[]
+  markers: CustomMarker[]
   onUpdate: (lines: ConnectorLine[]) => void
   isFlatMode: boolean
   radius?: number
@@ -22,6 +24,7 @@ interface ConnectorCalculatorProps {
  */
 function ConnectorCalculator({
   events,
+  markers,
   onUpdate,
   isFlatMode,
   radius = 1.01,
@@ -59,6 +62,10 @@ function ConnectorCalculator({
     const newLines: ConnectorLine[] = []
 
     events.forEach((event) => {
+      // 查找对应的标记
+      const marker = markers.find(m => m.id === event.markerId)
+      if (!marker) return  // 如果标记已删除，跳过
+
       // 从缓存获取或查询锚点元素
       let anchorElement = anchorCacheRef.current.get(event.id)
       if (!anchorElement) {
@@ -77,16 +84,16 @@ function ConnectorCalculator({
       let markerPos: Vector3
       if (isFlatMode) {
         const flatPos = lonLatToFlatPosition(
-          event.marker.longitude,
-          event.marker.latitude,
+          marker.longitude,
+          marker.latitude,
           mapWidth,
           mapHeight
         )
         markerPos = new Vector3(flatPos.x, flatPos.y, flatPos.z)
       } else {
         const spherePos = lonLatToVector3(
-          event.marker.longitude,
-          event.marker.latitude,
+          marker.longitude,
+          marker.latitude,
           radius
         )
         markerPos = new Vector3(spherePos.x, spherePos.y, spherePos.z)
