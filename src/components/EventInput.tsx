@@ -7,7 +7,7 @@ interface EventInputProps {
 }
 
 /**
- * 事件输入组件
+ * 事件输入组件 - 磨砂玻璃风格
  * 支持通过分号分隔的格式批量创建图钉和连接线
  *
  * 格式：
@@ -15,7 +15,6 @@ interface EventInputProps {
  * - 图钉：;时间;事件名;地点;描述
  */
 function EventInput({ onCreateEvents }: EventInputProps) {
-  const [isOpen, setIsOpen] = useState(false)
   const [text, setText] = useState('')
 
   const handleSubmit = () => {
@@ -25,7 +24,6 @@ function EventInput({ onCreateEvents }: EventInputProps) {
       if (events.length > 0) {
         onCreateEvents(text)
         setText('')
-        setIsOpen(false)
         console.log(`✅ 成功解析 ${events.length} 个事件`)
       } else {
         alert('未能解析任何事件，请检查格式是否正确')
@@ -42,21 +40,10 @@ function EventInput({ onCreateEvents }: EventInputProps) {
     setText(example)
   }
 
-  if (!isOpen) {
-    return (
-      <button className="event-input-toggle" onClick={() => setIsOpen(true)}>
-        📝 批量创建事件
-      </button>
-    )
-  }
-
   return (
     <div className="event-input-panel">
       <div className="event-input-header">
         <h3>批量创建事件</h3>
-        <button className="event-input-close" onClick={() => setIsOpen(false)}>
-          ✕
-        </button>
       </div>
 
       <div className="event-input-help">
@@ -79,9 +66,6 @@ function EventInput({ onCreateEvents }: EventInputProps) {
       <div className="event-input-actions">
         <button className="event-input-submit" onClick={handleSubmit}>
           创建事件
-        </button>
-        <button className="event-input-cancel" onClick={() => setIsOpen(false)}>
-          取消
         </button>
       </div>
     </div>

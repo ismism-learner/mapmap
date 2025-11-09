@@ -1,41 +1,20 @@
-/* 批量事件输入组件样式 */
-
-.event-input-toggle {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  transition: all 0.3s ease;
-  z-index: 800; /* 系统级面板 - 高于编辑面板 */
-}
-
-.event-input-toggle:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-}
+/* 批量事件输入组件 - 磨砂玻璃风格 */
 
 .event-input-panel {
   position: fixed;
-  bottom: 20px;
+  top: 90px;
   right: 20px;
   width: 500px;
-  max-height: 600px;
-  background: rgba(30, 30, 40, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
+  max-height: 75vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
   flex-direction: column;
-  z-index: 800; /* 系统级面板 - 高于编辑面板 */
+  z-index: 950;
   overflow: hidden;
 }
 
@@ -45,35 +24,14 @@
   align-items: center;
   padding: 16px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .event-input-header h3 {
   margin: 0;
   color: white;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
-}
-
-.event-input-close {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 24px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.event-input-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
 }
 
 .event-input-help {
@@ -94,25 +52,25 @@
 }
 
 .event-input-help strong {
-  color: #667eea;
+  color: #00ffff;
   font-weight: 600;
 }
 
 .event-input-example {
   padding: 6px 14px;
-  background: rgba(102, 126, 234, 0.2);
-  border: 1px solid rgba(102, 126, 234, 0.4);
-  color: #9fb3ff;
-  border-radius: 4px;
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  color: #00ffff;
+  border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .event-input-example:hover {
-  background: rgba(102, 126, 234, 0.3);
-  border-color: rgba(102, 126, 234, 0.6);
-  color: #b8c9ff;
+  background: rgba(0, 255, 255, 0.2);
+  border-color: rgba(0, 255, 255, 0.5);
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
 }
 
 .event-input-textarea {
@@ -139,34 +97,31 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.event-input-submit,
-.event-input-cancel {
+.event-input-submit {
   flex: 1;
   padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
+  background: rgba(0, 255, 255, 0.2);
+  border: 1px solid rgba(0, 255, 255, 0.5);
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
+  color: #00ffff;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.event-input-submit {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
 .event-input-submit:hover {
+  background: rgba(0, 255, 255, 0.3);
+  border-color: #00ffff;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-.event-input-cancel {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.event-input-cancel:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
+/* 响应式 */
+@media (max-width: 768px) {
+  .event-input-panel {
+    width: calc(100% - 40px);
+    right: 20px;
+    left: 20px;
+  }
 }

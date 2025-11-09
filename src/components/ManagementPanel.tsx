@@ -8,10 +8,11 @@ interface ManagementPanelProps {
   onDeleteMarker: (markerId: string) => void
   onDeleteConnection: (connectionId: string) => void
   onSelectMarker?: (marker: CustomMarker) => void
+  onClose: () => void
 }
 
 /**
- * 管理面板 - 管理所有图钉和连接
+ * 管理面板 - 管理所有图钉和连接（受控组件）
  * - 列出所有现有的图钉标记
  * - 列出所有连接线
  * - 支持删除功能
@@ -21,9 +22,9 @@ function ManagementPanel({
   connections,
   onDeleteMarker,
   onDeleteConnection,
-  onSelectMarker
+  onSelectMarker,
+  onClose
 }: ManagementPanelProps) {
-  const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'markers' | 'connections'>('markers')
 
   // 获取与某个标记相关的连接数量
@@ -55,27 +56,18 @@ function ManagementPanel({
     }
   }
 
-  if (!isOpen) {
-    return (
-      <button
-        className="management-toggle"
-        onClick={() => setIsOpen(true)}
-        title="管理图钉和连接"
-      >
-        📋
-      </button>
-    )
-  }
-
   return (
     <div className="management-panel">
       <div className="management-header">
         <h3>管理面板</h3>
         <button
           className="management-close"
-          onClick={() => setIsOpen(false)}
+          onClick={onClose}
         >
-          ✕
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
         </button>
       </div>
 
@@ -114,8 +106,8 @@ function ManagementPanel({
                   >
                     <div className="marker-title">{marker.info.title || '未命名'}</div>
                     <div className="marker-meta">
-                      <span>📍 {marker.latitude.toFixed(4)}°, {marker.longitude.toFixed(4)}°</span>
-                      {marker.info.videoInfo && <span className="video-badge">📺 视频</span>}
+                      <span>{marker.latitude.toFixed(4)}°, {marker.longitude.toFixed(4)}°</span>
+                      {marker.info.videoInfo && <span className="video-badge">视频</span>}
                     </div>
                     {marker.info.description && (
                       <div className="marker-description">
@@ -127,14 +119,14 @@ function ManagementPanel({
                     <div className="marker-stats">
                       {getMarkerConnectionCount(marker.id) > 0 && (
                         <span className="connection-count">
-                          🔗 {getMarkerConnectionCount(marker.id)} 条连接
+                          {getMarkerConnectionCount(marker.id)} 条连接
                         </span>
                       )}
                       {marker.info.links.length > 0 && (
-                        <span>🔗 {marker.info.links.length} 链接</span>
+                        <span>{marker.info.links.length} 链接</span>
                       )}
                       {marker.info.images.length > 0 && (
-                        <span>🖼️ {marker.info.images.length} 图片</span>
+                        <span>{marker.info.images.length} 图片</span>
                       )}
                     </div>
                   </div>
@@ -143,7 +135,10 @@ function ManagementPanel({
                     onClick={() => handleDeleteMarker(marker.id)}
                     title="删除图钉"
                   >
-                    🗑️
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
                   </button>
                 </div>
               ))
@@ -176,15 +171,15 @@ function ManagementPanel({
                         <div className="connection-event">
                           <div className="event-name">{connection.eventInfo.eventName}</div>
                           <div className="event-meta">
-                            <span>📅 {connection.eventInfo.time}</span>
+                            <span>{connection.eventInfo.time}</span>
                             {connection.eventInfo.relationship && (
-                              <span>🔗 {connection.eventInfo.relationship}</span>
+                              <span>{connection.eventInfo.relationship}</span>
                             )}
                           </div>
                         </div>
                       ) : connection.label ? (
                         <div className="connection-label">
-                          🏷️ {connection.label}
+                          {connection.label}
                         </div>
                       ) : null}
                     </div>
@@ -193,7 +188,10 @@ function ManagementPanel({
                       onClick={() => handleDeleteConnection(connection.id)}
                       title="删除连接"
                     >
-                      🗑️
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
                     </button>
                   </div>
                 )

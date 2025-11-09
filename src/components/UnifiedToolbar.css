@@ -1,0 +1,145 @@
+/* 统一工具栏 - 磨砂玻璃风格 */
+.unified-toolbar {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  z-index: 1000;
+}
+
+/* 主切换按钮 */
+.toolbar-toggle {
+  width: 50px;
+  height: 50px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.toolbar-toggle:hover {
+  background: rgba(0, 0, 0, 0.75);
+  border-color: rgba(0, 255, 255, 0.5);
+  transform: scale(1.05);
+  box-shadow: 0 8px 32px rgba(0, 255, 255, 0.2);
+}
+
+.toolbar-toggle svg {
+  transition: transform 0.3s;
+}
+
+.unified-toolbar.expanded .toolbar-toggle svg {
+  transform: rotate(90deg);
+}
+
+/* 工具按钮组容器 */
+.toolbar-buttons {
+  display: flex;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 8px;
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 单个工具按钮 */
+.toolbar-btn {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.toolbar-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(0, 255, 255, 0));
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(0, 255, 255, 0.4);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.toolbar-btn:hover::before {
+  opacity: 1;
+}
+
+/* 激活状态 */
+.toolbar-btn.active {
+  background: rgba(0, 255, 255, 0.2);
+  border-color: rgba(0, 255, 255, 0.6);
+  color: #00ffff;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+}
+
+.toolbar-btn.active::before {
+  opacity: 1;
+}
+
+/* 按钮图标 */
+.toolbar-btn svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .unified-toolbar {
+    top: 10px;
+    right: 10px;
+  }
+
+  .toolbar-toggle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .toolbar-buttons {
+    flex-direction: column;
+  }
+
+  .toolbar-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
