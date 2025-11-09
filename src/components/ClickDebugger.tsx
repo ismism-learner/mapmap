@@ -47,7 +47,7 @@ pointer-events: ${window.getComputedStyle(target).pointerEvents}
       <div
         style={{
           position: 'fixed',
-          top: '100px',
+          bottom: '120px',
           left: '20px',
           background: 'rgba(0, 0, 0, 0.7)',
           color: 'white',
@@ -69,7 +69,7 @@ pointer-events: ${window.getComputedStyle(target).pointerEvents}
     <div
       style={{
         position: 'fixed',
-        top: '100px',
+        bottom: '120px',
         left: '20px',
         background: 'rgba(0, 0, 0, 0.95)',
         color: 'white',

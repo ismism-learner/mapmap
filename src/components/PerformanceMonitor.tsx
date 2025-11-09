@@ -67,7 +67,7 @@ function PerformanceMonitor() {
         style={{
           position: 'fixed',
           bottom: '20px',
-          right: '20px',
+          left: '20px',
           background: 'rgba(0, 0, 0, 0.5)',
           color: 'white',
           padding: '8px 12px',
@@ -79,7 +79,7 @@ function PerformanceMonitor() {
         }}
         onClick={() => setVisible(true)}
       >
-        Shift+P: 显示性能监控
+        Shift+P
       </div>
     )
   }
@@ -89,7 +89,7 @@ function PerformanceMonitor() {
       style={{
         position: 'fixed',
         bottom: '20px',
-        right: '20px',
+        left: '20px',
         background: 'rgba(0, 0, 0, 0.85)',
         color: 'white',
         padding: '12px 16px',
