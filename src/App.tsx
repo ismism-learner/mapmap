@@ -372,8 +372,10 @@ function App() {
           isFlatMode={isFlatMode}
           useOptimizedRendering={true}
         />
-        <PerformanceMonitor />
       </Canvas>
+
+      {/* 性能监控面板 - 在Canvas外部 */}
+      <PerformanceMonitor />
 
       {/* 搜索栏 - 支持中文搜索 */}
       <SearchBar cities={cities} onSelectCity={handleSelectCity} />
