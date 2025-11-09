@@ -1,5 +1,5 @@
 import { useRef, useMemo, useEffect, useState } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Html } from '@react-three/drei'
 import { lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
@@ -118,56 +118,11 @@ function OptimizedMarkers({
     }
   }, [positions, allMarkers])
 
-  // 视锥剔除和LOD系统
-  useFrame(() => {
-    if (!instancedMeshRef.current) return
-
-    const frustum = new THREE.Frustum()
-    const projScreenMatrix = new THREE.Matrix4()
-    projScreenMatrix.multiplyMatrices(
-      camera.projectionMatrix,
-      camera.matrixWorldInverse
-    )
-    frustum.setFromProjectionMatrix(projScreenMatrix)
-
-    const matrix = new THREE.Matrix4()
-    const position = new THREE.Vector3()
-    const scale = new THREE.Vector3()
-    const cameraPosition = camera.position
-
-    positions.forEach((_, i) => {
-      instancedMeshRef.current!.getMatrixAt(i, matrix)
-      position.setFromMatrixPosition(matrix)
-
-      // 视锥剔除：不在视野内的标记隐藏（缩放为0）
-      const inFrustum = frustum.containsPoint(position)
-
-      if (inFrustum) {
-        // 计算距离
-        const distance = cameraPosition.distanceTo(position)
-
-        // LOD系统：根据距离调整大小
-        let lodScale = 1.0
-        if (distance > 5) {
-          lodScale = 0.5 // 远距离：缩小
-        } else if (distance > 3) {
-          lodScale = 0.7 // 中距离：稍微缩小
-        } else {
-          lodScale = 1.0 // 近距离：正常大小
-        }
-
-        scale.set(lodScale, lodScale, lodScale)
-      } else {
-        // 不在视野内：隐藏
-        scale.set(0, 0, 0)
-      }
-
-      matrix.scale(scale)
-      instancedMeshRef.current!.setMatrixAt(i, matrix)
-    })
-
-    instancedMeshRef.current.instanceMatrix.needsUpdate = true
-  })
+  // 暂时禁用视锥剔除和LOD - 简化为基本渲染
+  // useFrame(() => {
+  //   if (!instancedMeshRef.current) return
+  //   // 视锥剔除和LOD逻辑暂时禁用
+  // })
 
   // 处理鼠标交互（点击和悬停）
   useEffect(() => {
