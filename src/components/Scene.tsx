@@ -4,7 +4,8 @@ import { ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
 import Globe from './Globe'
 import FlatMap from './FlatMap'
-import BoundaryLayer from './BoundaryLayer'
+import FlatMapControls from './FlatMapControls'
+import InteractiveBoundary from './InteractiveBoundary'
 import Marker from './Marker'
 import Pushpin from './Pushpin'
 import MarkerConnector from './MarkerConnector'
@@ -115,13 +116,14 @@ function Scene({
         </mesh>
       )}
 
-      {/* 边界线图层 */}
+      {/* 交互式边界线图层 */}
       {layers.map((layer) => (
-        <BoundaryLayer
+        <InteractiveBoundary
           key={layer.id}
           shpPath={layer.shpPath}
           color={layer.color}
           visible={layer.visible}
+          isFlat={isFlatMode}
         />
       ))}
 
@@ -161,6 +163,7 @@ function Scene({
             toMarker={toMarker}
             color="#00ffff"
             lineWidth={2}
+            isFlat={isFlatMode}
           />
         )
       })}
@@ -176,14 +179,25 @@ function Scene({
         speed={1}
       />
 
-      {/* 轨道控制器 - 支持鼠标拖动旋转/平移 */}
-      <OrbitControls
-        enableZoom={true}
-        enablePan={isFlatMode}
-        enableRotate={!isFlatMode}
-        zoomSpeed={0.6}
-        rotateSpeed={0.4}
-      />
+      {/* 控制器 - 根据模式选择 */}
+      {isFlatMode ? (
+        /* 平面模式：带限制的缩放和平移控制 */
+        <FlatMapControls
+          mapWidth={4}
+          mapHeight={2}
+          minZoom={1.5}
+          maxZoom={12}
+        />
+      ) : (
+        /* 球形模式：旋转控制 */
+        <OrbitControls
+          enableZoom={true}
+          enablePan={false}
+          enableRotate={true}
+          zoomSpeed={0.6}
+          rotateSpeed={0.4}
+        />
+      )}
     </>
   )
 }

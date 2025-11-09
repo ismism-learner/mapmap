@@ -17,9 +17,9 @@ interface PushpinProps {
 }
 
 /**
- * 2D SVG图钉组件
- * - 使用SVG模拟3D效果，性能更好
- * - 通过连接线角度变化模拟立体感
+ * 简化的2D SVG图钉组件
+ * - 轻量级SVG实现，性能优秀
+ * - 简单的外圈+内圈设计
  * - 支持点击和悬停
  * - 显示标签
  * - 支持球形和平面两种模式
@@ -49,32 +49,12 @@ function Pushpin({
 
   const { x, y, z } = position
 
-  // 根据位置计算模拟3D的角度
-  // 使用经纬度来计算一个角度，模拟光照方向
-  const highlightAngle = useMemo(() => {
-    // 使用经度和纬度的组合来计算角度
-    // 这样每个图钉的"光照"角度都不同，增强立体感
-    const baseAngle = (longitude + 180) * (Math.PI / 180)
-    const latitudeFactor = latitude * (Math.PI / 180)
-    return baseAngle + latitudeFactor * 0.3
-  }, [longitude, latitude])
-
-  // SVG图钉配置
+  // 简化的SVG图钉配置
   const pinConfig = {
     outerRadius: 10,      // 外圈半径
     innerRadius: 6,       // 内圈半径
     strokeWidth: 2,       // 外圈描边宽度
-    highlightWidth: 1.5,  // 高光线宽度
   }
-
-  // 计算高光线的终点坐标
-  const highlightEnd = useMemo(() => {
-    const cx = pinConfig.outerRadius + pinConfig.strokeWidth
-    const cy = pinConfig.outerRadius + pinConfig.strokeWidth
-    const px = cx + pinConfig.outerRadius * Math.cos(highlightAngle)
-    const py = cy + pinConfig.outerRadius * Math.sin(highlightAngle)
-    return { px, py }
-  }, [highlightAngle, pinConfig.outerRadius, pinConfig.strokeWidth])
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -134,25 +114,6 @@ function Pushpin({
             cy={pinConfig.outerRadius + pinConfig.strokeWidth}
             r={pinConfig.innerRadius}
             fill={hovered ? '#ff6b6b' : color}
-          />
-
-          {/* 连接线（模拟高光/3D效果） */}
-          <line
-            x1={pinConfig.outerRadius + pinConfig.strokeWidth}
-            y1={pinConfig.outerRadius + pinConfig.strokeWidth}
-            x2={highlightEnd.px}
-            y2={highlightEnd.py}
-            stroke={hovered ? '#ffffff' : 'rgba(255, 255, 255, 0.8)'}
-            strokeWidth={pinConfig.highlightWidth}
-            strokeLinecap="round"
-          />
-
-          {/* 中心点（增强立体感） */}
-          <circle
-            cx={pinConfig.outerRadius + pinConfig.strokeWidth}
-            cy={pinConfig.outerRadius + pinConfig.strokeWidth}
-            r={2}
-            fill="rgba(0, 0, 0, 0.2)"
           />
         </svg>
 

@@ -6,7 +6,7 @@ import SearchBar from './components/SearchBar'
 import InfoCard from './components/InfoCard'
 import EditableInfoPanel from './components/EditableInfoPanel'
 import ModeToggle from './components/ModeToggle'
-import SliceTransition from './components/SliceTransition'
+import UnfoldTransition from './components/UnfoldTransition'
 import { City, loadCities } from './utils/cityUtils'
 import { TextureConfig, loadTextures } from './types/texture'
 import {
@@ -305,11 +305,11 @@ function App() {
         hasSelectedMarker={!!firstMarkerForConnect}
       />
 
-      {/* 伪3D切片过渡效果 */}
-      <SliceTransition
+      {/* 球形展开/收缩过渡效果 */}
+      <UnfoldTransition
         isTransitioning={isTransitioning}
-        sliceCount={12}
-        duration={800}
+        toFlatMode={isFlatMode}
+        duration={600}
       />
     </div>
   )
