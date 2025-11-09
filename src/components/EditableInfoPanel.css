@@ -15,7 +15,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  z-index: 1000;
+  z-index: 10000;
   animation: slideIn 0.3s ease-out;
 }
 
@@ -71,6 +71,10 @@
   justify-content: center;
   border-radius: 50%;
   transition: all 0.2s;
+  flex-shrink: 0;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
 }
 
 .close-btn:hover {
