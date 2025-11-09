@@ -7,6 +7,7 @@ import InfoCard from './components/InfoCard'
 import EditableInfoPanel from './components/EditableInfoPanel'
 import ModeToggle from './components/ModeToggle'
 import { City, loadCities } from './utils/cityUtils'
+import { TextureConfig, loadTextures } from './types/texture'
 import {
   CustomMarker,
   MarkerConnection,
@@ -46,6 +47,10 @@ function App() {
   // 光照模式
   const [realisticLighting, setRealisticLighting] = useState(false) // 真实光照模式（默认关闭）
 
+  // 底图管理
+  const [textures, setTextures] = useState<TextureConfig[]>([])
+  const [selectedTexture, setSelectedTexture] = useState<string>('earth_hq')
+
   const [flyToCity, setFlyToCity] = useState<{ lon: number; lat: number } | null>(null)
 
   // 加载城市数据
@@ -56,6 +61,16 @@ function App() {
       console.log(`✅ Loaded ${citiesData.length} cities for search`)
     }
     loadData()
+  }, [])
+
+  // 加载底图列表
+  useEffect(() => {
+    const loadTextureList = async () => {
+      const textureList = await loadTextures()
+      setTextures(textureList)
+      console.log(`✅ Loaded ${textureList.length} textures`)
+    }
+    loadTextureList()
   }, [])
 
   // 切换图层显示状态
@@ -213,6 +228,9 @@ function App() {
     }
   }
 
+  // 获取当前选中的底图路径
+  const currentTexturePath = textures.find(t => t.id === selectedTexture)?.path
+
   return (
     <div className="app">
       <Canvas camera={{ position: [0, 0, 3], fov: 45 }}>
@@ -228,6 +246,7 @@ function App() {
           manualConnectMode={manualConnectMode}
           selectedMarkerForConnect={firstMarkerForConnect}
           realisticLighting={realisticLighting}
+          texturePath={currentTexturePath}
         />
       </Canvas>
 
@@ -246,6 +265,9 @@ function App() {
         onLayerToggle={handleLayerToggle}
         realisticLighting={realisticLighting}
         onLightingToggle={() => setRealisticLighting(!realisticLighting)}
+        textures={textures}
+        selectedTexture={selectedTexture}
+        onTextureChange={setSelectedTexture}
       />
 
       {/* 城市信息卡片 */}

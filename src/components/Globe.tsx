@@ -2,14 +2,19 @@ import { useLoader } from '@react-three/fiber'
 import { TextureLoader } from 'three'
 import * as THREE from 'three'
 
+interface GlobeProps {
+  texturePath?: string
+}
+
 /**
  * 3D 地球组件
  * - 使用真实地图纹理
  * - 支持鼠标交互（通过 OrbitControls）
+ * - 支持自定义底图
  */
-function Globe() {
+function Globe({ texturePath = '/textures/earth_hq.jpg' }: GlobeProps) {
   // 加载地球纹理
-  const texture = useLoader(TextureLoader, '/earth_hq.jpg')
+  const texture = useLoader(TextureLoader, texturePath)
 
   // 配置纹理以避免极点撕裂
   texture.wrapS = THREE.RepeatWrapping

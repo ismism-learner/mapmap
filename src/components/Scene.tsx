@@ -25,6 +25,7 @@ interface SceneProps {
   manualConnectMode?: boolean
   selectedMarkerForConnect?: CustomMarker | null
   realisticLighting?: boolean
+  texturePath?: string
 }
 
 function Scene({
@@ -38,7 +39,8 @@ function Scene({
   flyToCity,
   manualConnectMode = false,
   selectedMarkerForConnect = null,
-  realisticLighting = false
+  realisticLighting = false,
+  texturePath
 }: SceneProps) {
   const { flyTo } = useCameraControls()
   const globeRef = useRef<Mesh>(null)
@@ -84,7 +86,7 @@ function Scene({
 
       {/* 地球组件 - 添加双击事件 */}
       <mesh ref={globeRef} onDoubleClick={handleGlobeDoubleClick}>
-        <Globe />
+        <Globe texturePath={texturePath} />
       </mesh>
 
       {/* 边界线图层 */}
