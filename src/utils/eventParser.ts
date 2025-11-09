@@ -17,12 +17,15 @@ export interface ParsedPin {
   eventName: string
   location: string
   description: string
+  imageUrls?: string[]  // 图片URL列表
+  linkUrls?: string[]   // 链接URL列表
 }
 
 export interface ParsedVideoPin {
   type: 'videoPin'
   location: string
   videoUrl: string
+  imageUrls?: string[]  // 图片URL列表
 }
 
 export type ParsedEvent = ParsedConnection | ParsedPin | ParsedVideoPin
@@ -30,8 +33,10 @@ export type ParsedEvent = ParsedConnection | ParsedPin | ParsedVideoPin
 /**
  * 解析单行事件文本
  * - 连接线格式：时间;事件名;地点1;关系;地点2
- * - 图钉格式：;时间;事件名;地点;描述
- * - 视频图钉格式：地点;B站链接
+ * - 图钉格式：;时间;事件名;地点;描述[;图片URLs;链接URLs]
+ * - 视频图钉格式：地点;B站链接[;图片URLs]
+ *
+ * 图片URLs和链接URLs使用逗号分隔，例如：url1,url2,url3
  */
 export function parseEventLine(line: string): ParsedEvent | null {
   const trimmedLine = line.trim()
@@ -44,23 +49,33 @@ export function parseEventLine(line: string): ParsedEvent | null {
   const normalizedLine = trimmedLine.replace(/；/g, ';')
   const parts = normalizedLine.split(';').map(p => p.trim())
 
-  // 视频图钉格式：地点;B站链接 (2个部分)
-  if (parts.length === 2 && isBilibiliURL(parts[1])) {
+  // 辅助函数：解析逗号分隔的URL列表
+  const parseUrls = (urlString: string): string[] => {
+    if (!urlString || urlString.trim() === '') return []
+    return urlString.split(',').map(u => u.trim()).filter(u => u.length > 0)
+  }
+
+  // 视频图钉格式：地点;B站链接[;图片URLs] (2-3个部分)
+  if (parts.length >= 2 && isBilibiliURL(parts[1])) {
     return {
       type: 'videoPin',
       location: parts[0],
-      videoUrl: parts[1]
+      videoUrl: parts[1],
+      imageUrls: parts.length >= 3 ? parseUrls(parts[2]) : undefined
     }
   }
 
   // 图钉格式：以分号开头，第一个元素为空
+  // ;时间;事件名;地点;描述[;图片URLs;链接URLs]
   if (parts[0] === '' && parts.length >= 5) {
     return {
       type: 'pin',
       time: parts[1],
       eventName: parts[2],
       location: parts[3],
-      description: parts[4]
+      description: parts[4],
+      imageUrls: parts.length >= 6 ? parseUrls(parts[5]) : undefined,
+      linkUrls: parts.length >= 7 ? parseUrls(parts[6]) : undefined
     }
   }
 
@@ -208,7 +223,9 @@ export interface GeocodedMarker {
   title: string
   description: string
   time: string
-  videoUrl?: string // B站视频链接（可选）
+  videoUrl?: string     // B站视频链接（可选）
+  imageUrls?: string[]  // 图片URL列表（可选）
+  linkUrls?: string[]   // 链接URL列表（可选）
 }
 
 export interface GeocodedConnection {
@@ -229,7 +246,7 @@ export async function geocodeEvents(
 
   for (const event of events) {
     if (event.type === 'videoPin') {
-      // 视频图钉：地点;B站链接
+      // 视频图钉：地点;B站链接[;图片URLs]
       const coords = await geocodeLocation(event.location, cities)
       if (coords) {
         markers.push({
@@ -238,7 +255,8 @@ export async function geocodeEvents(
           title: event.location, // 使用地点作为临时标题
           description: '',
           time: '',
-          videoUrl: event.videoUrl
+          videoUrl: event.videoUrl,
+          imageUrls: event.imageUrls
         })
       }
     } else if (event.type === 'pin') {
@@ -249,7 +267,9 @@ export async function geocodeEvents(
           longitude: coords.longitude,
           title: event.eventName,
           description: `${event.description}\n时间: ${event.time}`,
-          time: event.time
+          time: event.time,
+          imageUrls: event.imageUrls,
+          linkUrls: event.linkUrls
         })
       }
     } else if (event.type === 'connection') {

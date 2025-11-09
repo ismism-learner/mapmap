@@ -7,6 +7,7 @@ interface UnifiedToolbarProps {
   onToggleEventInput: () => void
   onToggleManualConnect: () => void
   onToggleAutoConnect: () => void
+  onToggleEventCardMode: () => void
   onToggleLayerControl: () => void
   onToggleManagement: () => void
   onToggleImageUpload: () => void
@@ -15,6 +16,7 @@ interface UnifiedToolbarProps {
   onTogglePaintMode: () => void
   autoConnectEnabled: boolean
   manualConnectEnabled: boolean
+  eventCardModeEnabled: boolean
   eventInputOpen: boolean
   layerControlOpen: boolean
   managementOpen: boolean
@@ -35,6 +37,7 @@ function UnifiedToolbar({
   onToggleEventInput,
   onToggleManualConnect,
   onToggleAutoConnect,
+  onToggleEventCardMode,
   onToggleLayerControl,
   onToggleManagement,
   onToggleImageUpload,
@@ -43,6 +46,7 @@ function UnifiedToolbar({
   onTogglePaintMode,
   autoConnectEnabled,
   manualConnectEnabled,
+  eventCardModeEnabled,
   eventInputOpen,
   layerControlOpen,
   managementOpen,
@@ -113,6 +117,19 @@ function UnifiedToolbar({
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="16 18 22 12 16 6" />
               <polyline points="8 6 2 12 8 18" />
+            </svg>
+          </button>
+
+          {/* 事件卡模式 */}
+          <button
+            className={`toolbar-btn ${eventCardModeEnabled ? 'active' : ''}`}
+            onClick={onToggleEventCardMode}
+            title="事件卡模式 - 点击图钉创建事件卡"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="4" y="4" width="16" height="16" rx="2" />
+              <line x1="8" y1="10" x2="16" y2="10" />
+              <line x1="8" y1="14" x2="12" y2="14" />
             </svg>
           </button>
 

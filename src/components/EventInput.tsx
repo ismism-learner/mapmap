@@ -34,8 +34,9 @@ function EventInput({ onCreateEvents }: EventInputProps) {
   const handleExample = () => {
     const example = `2023-01-01;国事访问;美国,San Francisco;会见;中国,北京
 2024-03-15;经贸合作;德国,Berlin;协议;日本,Tokyo
-;2024-05-20;科技峰会;中国,上海;发布新AI模型
-中国,北京;https://www.bilibili.com/video/BV1xx411c7mu
+;2024-05-20;科技峰会;中国,上海;发布新AI模型;;https://example.com/summit
+;2024-06-10;展览活动;法国,Paris;艺术展览;https://picsum.photos/400/300,https://picsum.photos/500/350;https://example.com/exhibit
+中国,北京;https://www.bilibili.com/video/BV1xx411c7mu;https://picsum.photos/600/400
 美国,纽约;BV1Ab411q7kE`
     setText(example)
   }
@@ -47,11 +48,26 @@ function EventInput({ onCreateEvents }: EventInputProps) {
       </div>
 
       <div className="event-input-help">
-        <p><strong>连接线格式：</strong> 时间;事件名;地点1;关系;地点2</p>
-        <p><strong>图钉格式：</strong> ;时间;事件名;地点;描述</p>
-        <p><strong>视频图钉：</strong> 地点;B站链接</p>
+        <p><strong>🔗 连接线格式：</strong></p>
+        <p style={{ marginLeft: '20px', fontSize: '12px', color: '#888' }}>
+          时间;事件名;地点1;关系;地点2
+        </p>
+
+        <p><strong>📍 图钉格式（完整）：</strong></p>
+        <p style={{ marginLeft: '20px', fontSize: '12px', color: '#888' }}>
+          ;时间;事件名;地点;描述;图片URLs;链接URLs
+        </p>
+        <p style={{ marginLeft: '20px', fontSize: '11px', color: '#666' }}>
+          💡 图片URLs和链接URLs用逗号分隔，可选字段
+        </p>
+
+        <p><strong>📺 视频图钉格式：</strong></p>
+        <p style={{ marginLeft: '20px', fontSize: '12px', color: '#888' }}>
+          地点;B站链接;图片URLs
+        </p>
+
         <button className="event-input-example" onClick={handleExample}>
-          填入示例
+          📋 填入示例
         </button>
       </div>
 
