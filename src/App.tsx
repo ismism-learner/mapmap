@@ -12,6 +12,7 @@ import PerformanceMonitor from './components/PerformanceMonitor'
 import MarkerStressTest from './components/MarkerStressTest'
 import ClickDebugger from './components/ClickDebugger'
 import AdminPanel from './components/AdminPanel'
+import ManagementPanel from './components/ManagementPanel'
 import { City, loadCities } from './utils/cityUtils'
 import { TextureConfig, loadTextures } from './types/texture'
 import {
@@ -237,6 +238,34 @@ function App() {
     }
 
     setSelectedMarker(null)
+  }
+
+  // 删除标记（通过ID，用于管理面板）
+  const handleDeleteMarkerById = (markerId: string) => {
+    // 删除标记
+    setCustomMarkers((prev) => prev.filter((m) => m.id !== markerId))
+
+    // 删除与此标记相关的连接线
+    setConnections((prev) =>
+      prev.filter(
+        (c) => c.fromMarkerId !== markerId && c.toMarkerId !== markerId
+      )
+    )
+
+    // 如果这是最后一个标记，清除
+    if (lastMarker?.id === markerId) {
+      setLastMarker(null)
+    }
+
+    // 如果这是选中的标记，清除选中状态
+    if (selectedMarker?.id === markerId) {
+      setSelectedMarker(null)
+    }
+  }
+
+  // 删除连接（用于管理面板）
+  const handleDeleteConnection = (connectionId: string) => {
+    setConnections((prev) => prev.filter((c) => c.id !== connectionId))
   }
 
   // 处理标签拖动
@@ -509,6 +538,17 @@ function App() {
         connections={connections}
         onImportData={handleImportData}
       />
+
+      {/* 管理面板 - 管理图钉和连接，仅管理员模式 */}
+      {isAdminMode && (
+        <ManagementPanel
+          customMarkers={customMarkers}
+          connections={connections}
+          onDeleteMarker={handleDeleteMarkerById}
+          onDeleteConnection={handleDeleteConnection}
+          onSelectMarker={setSelectedMarker}
+        />
+      )}
 
       {/* 球形展开/收缩过渡效果 */}
       <UnfoldTransition

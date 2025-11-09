@@ -290,44 +290,55 @@ function MarkerConnector({
         </Html>
       )}
 
-      {/* 悬停时显示事件信息（eventInfo优先） */}
-      {hovered && connection.eventInfo && (
+      {/* 永久显示标签（事件信息或简单标签） */}
+      {!isEditing && (label || connection.eventInfo) && (
         <Html
           position={[midpoint.x, midpoint.y, midpoint.z]}
           center
           distanceFactor={isFlat ? 1 : 0.5}
           style={{
-            pointerEvents: 'none',
-            zIndex: 10000,
+            pointerEvents: hovered && connection.eventInfo ? 'auto' : 'none',
+            zIndex: hovered && connection.eventInfo ? 10000 : 10,
           }}
+          zIndexRange={[100, 0]}
         >
           <div
             style={{
-              background: 'rgba(0, 0, 0, 0.92)',
+              background: hovered && connection.eventInfo ? 'rgba(0, 0, 0, 0.92)' : 'rgba(0, 0, 0, 0.85)',
               color: 'white',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
+              padding: hovered && connection.eventInfo ? '10px 14px' : '2px 6px',
+              borderRadius: hovered && connection.eventInfo ? '8px' : '3px',
+              fontSize: '8px',
+              fontWeight: '500',
               whiteSpace: 'nowrap',
-              border: '2px solid #00ffff',
-              boxShadow: '0 4px 16px rgba(0, 255, 255, 0.3)',
-              maxWidth: '280px',
+              border: hovered && connection.eventInfo ? '2px solid #00ffff' : '1px solid rgba(0, 255, 255, 0.3)',
+              boxShadow: hovered && connection.eventInfo ? '0 4px 16px rgba(0, 255, 255, 0.3)' : '0 2px 8px rgba(0,0,0,0.3)',
+              maxWidth: hovered && connection.eventInfo ? '280px' : 'none',
+              transition: 'all 0.2s',
+              userSelect: 'none',
             }}
           >
-            <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#00ffff' }}>
-              {connection.eventInfo.eventName}
-            </div>
-            <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>
-              📅 {connection.eventInfo.time}
-            </div>
-            {connection.eventInfo.relationship && (
-              <div style={{ fontSize: '12px', color: '#ddd' }}>
-                🔗 {connection.eventInfo.relationship}
-              </div>
+            {hovered && connection.eventInfo ? (
+              <>
+                <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#00ffff', fontSize: '13px' }}>
+                  {connection.eventInfo.eventName}
+                </div>
+                <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>
+                  📅 {connection.eventInfo.time}
+                </div>
+                {connection.eventInfo.relationship && (
+                  <div style={{ fontSize: '12px', color: '#ddd' }}>
+                    🔗 {connection.eventInfo.relationship}
+                  </div>
+                )}
+              </>
+            ) : (
+              connection.eventInfo?.eventName || label
             )}
           </div>
         </Html>
       )}
+
     </group>
   )
 }

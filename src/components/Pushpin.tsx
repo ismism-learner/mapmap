@@ -134,8 +134,8 @@ function Pushpin({
           />
         </svg>
 
-        {/* 视频封面 - 悬停时显示，可点击跳转 */}
-        {videoInfo && hovered && (
+        {/* 视频封面 - 长期显示，可点击跳转 */}
+        {videoInfo && (
           <a
             href={videoInfo.url}
             target="_blank"
@@ -215,15 +215,15 @@ function Pushpin({
           </a>
         )}
 
-        {/* 标签 - 当没有视频时，悬停显示 */}
-        {!videoInfo && label && hovered && (
+        {/* 标签 - 当没有视频时，长期显示 */}
+        {!videoInfo && label && (
           <div
             style={{
               background: 'rgba(0, 0, 0, 0.85)',
               color: 'white',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              fontSize: '11px',
+              padding: '2px 6px',
+              borderRadius: '3px',
+              fontSize: '8px',
               fontWeight: '500',
               whiteSpace: 'nowrap',
               marginTop: '4px',
@@ -231,7 +231,6 @@ function Pushpin({
               border: '1px solid rgba(255,255,255,0.2)',
               pointerEvents: 'none',
               userSelect: 'none',
-              transition: 'opacity 0.2s',
             }}
           >
             {label}
