@@ -17,6 +17,7 @@ interface MarkerConnectorProps {
   mapHeight?: number
   label?: string // 连接线标签
   onLabelChange?: (newLabel: string) => void // 标签修改回调
+  globeRef?: React.RefObject<Mesh> // 地球引用，用于遮挡检测
 }
 
 /**
@@ -37,7 +38,8 @@ function MarkerConnector({
   mapWidth = 4,
   mapHeight = 2,
   label = '',
-  onLabelChange
+  onLabelChange,
+  globeRef
 }: MarkerConnectorProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(label)
@@ -45,8 +47,8 @@ function MarkerConnector({
   const arrowRef = useRef<Mesh>(null)
   const progressRef = useRef(0)
 
-  // 计算连线的点和中点
-  const { points, midpoint } = useMemo(() => {
+  // 计算连线的点和标签位置
+  const { points, labelPosition } = useMemo(() => {
     if (isFlat) {
       // 平面模式：简单的直线连接
       const start = lonLatToFlatPosition(
@@ -70,7 +72,7 @@ function MarkerConnector({
 
       return {
         points: [startVec, endVec],
-        midpoint: mid
+        labelPosition: mid
       }
     } else {
       // 球形模式：简化的贝塞尔曲线
@@ -91,8 +93,8 @@ function MarkerConnector({
       // 计算两点之间的角度
       const angle = startVec.angleTo(endVec)
 
-      // 使用球面插值计算中点，避免对跖点问题
-      const mid = new Vector3()
+      // 计算贝塞尔曲线的控制点
+      const controlPoint = new Vector3()
 
       if (angle > Math.PI * 0.95) {
         // 对于接近对跖点的情况（>171度），使用垂直于两点的向量
@@ -105,25 +107,28 @@ function MarkerConnector({
           cross.crossVectors(startVec, arbitrary)
         }
         cross.normalize()
-        mid.copy(cross).multiplyScalar(radius)
+        controlPoint.copy(cross).multiplyScalar(radius)
       } else {
         // 正常情况：使用球面插值（slerp）
-        mid.copy(startVec).lerp(endVec, 0.5).normalize()
+        controlPoint.copy(startVec).lerp(endVec, 0.5).normalize()
 
         // 计算弧线高度（基于角度）
         const arcHeight = Math.min(Math.sin(angle / 2) * 0.3, 0.3)
-        mid.multiplyScalar(radius + arcHeight)
+        controlPoint.multiplyScalar(radius + arcHeight)
       }
 
       // 创建贝塞尔曲线
-      const curve = new QuadraticBezierCurve3(startVec, mid, endVec)
+      const curve = new QuadraticBezierCurve3(startVec, controlPoint, endVec)
 
       // 减少点数：从50降到20，大幅提升性能
       const curvePoints = curve.getPoints(20)
 
+      // 标签位置：使用曲线在 t=0.5 处的实际点（曲线的真实中点）
+      const actualMidpoint = curve.getPoint(0.5)
+
       return {
         points: curvePoints,
-        midpoint: mid
+        labelPosition: actualMidpoint
       }
     }
   }, [fromMarker, toMarker, radius, isFlat, mapWidth, mapHeight])
@@ -221,8 +226,9 @@ function MarkerConnector({
       {/* 标签编辑（只在编辑时显示） */}
       {!connection.eventInfo && isEditing && (
         <Html
-          position={[midpoint.x, midpoint.y, midpoint.z]}
+          position={[labelPosition.x, labelPosition.y, labelPosition.z]}
           center
+          occlude={globeRef ? [globeRef] : undefined}
           distanceFactor={isFlat ? 1 : 0.5}
           style={{
             pointerEvents: 'auto',
@@ -293,8 +299,9 @@ function MarkerConnector({
       {/* 永久显示标签（事件信息或简单标签） */}
       {!isEditing && (label || connection.eventInfo) && (
         <Html
-          position={[midpoint.x, midpoint.y, midpoint.z]}
+          position={[labelPosition.x, labelPosition.y, labelPosition.z]}
           center
+          occlude={globeRef ? [globeRef] : undefined}
           distanceFactor={isFlat ? 1 : 0.5}
           style={{
             pointerEvents: hovered && connection.eventInfo ? 'auto' : 'none',
