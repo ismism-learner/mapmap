@@ -40,6 +40,16 @@ function ConnectorCalculator({
       return
     }
 
+    // 清理无效缓存（每次更新时顺带执行）
+    const currentEventIds = new Set(events.map(e => e.id))
+    const cachedIds = Array.from(anchorCacheRef.current.keys())
+    cachedIds.forEach(id => {
+      if (!currentEventIds.has(id)) {
+        anchorCacheRef.current.delete(id)
+      }
+    })
+
+    // 如果没有事件，清空连接线
     if (events.length === 0) {
       if (lastLinesRef.current.length > 0) {
         onUpdate([])
@@ -141,18 +151,6 @@ function ConnectorCalculator({
       onUpdate(newLines)
       lastLinesRef.current = newLines
     }
-  })
-
-  // 清理缓存
-  useFrame(() => {
-    const currentEventIds = new Set(events.map(e => e.id))
-    const cachedIds = Array.from(anchorCacheRef.current.keys())
-
-    cachedIds.forEach(id => {
-      if (!currentEventIds.has(id)) {
-        anchorCacheRef.current.delete(id)
-      }
-    })
   })
 
   return null
