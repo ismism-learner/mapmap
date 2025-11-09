@@ -51,6 +51,9 @@ function App() {
   const [textures, setTextures] = useState<TextureConfig[]>([])
   const [selectedTexture, setSelectedTexture] = useState<string>('earth_hq')
 
+  // 地图模式（球形/平面）
+  const [isFlatMode, setIsFlatMode] = useState(false) // 默认球形模式
+
   const [flyToCity, setFlyToCity] = useState<{ lon: number; lat: number } | null>(null)
 
   // 加载城市数据
@@ -233,7 +236,7 @@ function App() {
 
   return (
     <div className="app">
-      <Canvas camera={{ position: [0, 0, 3], fov: 45 }}>
+      <Canvas camera={{ position: isFlatMode ? [0, 0, 5] : [0, 0, 3], fov: 45 }}>
         <Scene
           layers={layers}
           cityMarkers={cityMarkers}
@@ -247,6 +250,7 @@ function App() {
           selectedMarkerForConnect={firstMarkerForConnect}
           realisticLighting={realisticLighting}
           texturePath={currentTexturePath}
+          isFlatMode={isFlatMode}
         />
       </Canvas>
 
@@ -256,7 +260,7 @@ function App() {
       {/* 左上角信息 */}
       <div className="info">
         <h1>MapMap - 3D 地球</h1>
-        <p>鼠标拖动旋转 | 滚轮缩放 | 双击放置图钉</p>
+        <p>{isFlatMode ? '鼠标拖动平移' : '鼠标拖动旋转'} | 滚轮缩放 | 双击放置图钉</p>
       </div>
 
       {/* 图层控制面板 */}
@@ -268,6 +272,8 @@ function App() {
         textures={textures}
         selectedTexture={selectedTexture}
         onTextureChange={setSelectedTexture}
+        isFlatMode={isFlatMode}
+        onMapModeToggle={() => setIsFlatMode(!isFlatMode)}
       />
 
       {/* 城市信息卡片 */}

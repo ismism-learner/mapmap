@@ -3,6 +3,7 @@ import { Mesh } from 'three'
 import { ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
 import Globe from './Globe'
+import FlatMap from './FlatMap'
 import BoundaryLayer from './BoundaryLayer'
 import Marker from './Marker'
 import Pushpin from './Pushpin'
@@ -26,6 +27,7 @@ interface SceneProps {
   selectedMarkerForConnect?: CustomMarker | null
   realisticLighting?: boolean
   texturePath?: string
+  isFlatMode?: boolean
 }
 
 function Scene({
@@ -40,17 +42,18 @@ function Scene({
   manualConnectMode = false,
   selectedMarkerForConnect = null,
   realisticLighting = false,
-  texturePath
+  texturePath,
+  isFlatMode = false
 }: SceneProps) {
   const { flyTo } = useCameraControls()
   const globeRef = useRef<Mesh>(null)
 
   // 当 flyToCity 改变时，执行相机动画
-  if (flyToCity) {
+  if (flyToCity && !isFlatMode) {
     flyTo(flyToCity.lon, flyToCity.lat, 1.5)
   }
 
-  // 处理双击地球事件
+  // 处理双击地球事件（球形模式）
   const handleGlobeDoubleClick = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation()
 
@@ -59,6 +62,23 @@ function Scene({
 
     // 将3D坐标转换为经纬度
     const { latitude, longitude } = vector3ToLonLat(point.x, point.y, point.z)
+
+    onDoubleClick(latitude, longitude)
+  }
+
+  // 处理双击平面地图事件（平面模式）
+  const handleFlatMapDoubleClick = (event: ThreeEvent<MouseEvent>) => {
+    event.stopPropagation()
+
+    // 获取点击点的世界坐标
+    const point = event.point
+
+    // 平面地图坐标转换为经纬度
+    // 默认地图尺寸: width=4, height=2
+    const mapWidth = 4
+    const mapHeight = 2
+    const longitude = (point.x / (mapWidth / 2)) * 180
+    const latitude = (point.y / (mapHeight / 2)) * 90
 
     onDoubleClick(latitude, longitude)
   }
@@ -84,10 +104,16 @@ function Scene({
         </>
       )}
 
-      {/* 地球组件 - 添加双击事件 */}
-      <mesh ref={globeRef} onDoubleClick={handleGlobeDoubleClick}>
-        <Globe texturePath={texturePath} />
-      </mesh>
+      {/* 地球/平面地图组件 - 添加双击事件 */}
+      {isFlatMode ? (
+        <mesh ref={globeRef} onDoubleClick={handleFlatMapDoubleClick}>
+          <FlatMap texturePath={texturePath} />
+        </mesh>
+      ) : (
+        <mesh ref={globeRef} onDoubleClick={handleGlobeDoubleClick}>
+          <Globe texturePath={texturePath} />
+        </mesh>
+      )}
 
       {/* 边界线图层 */}
       {layers.map((layer) => (
@@ -116,6 +142,7 @@ function Scene({
             onClick={() => onCustomMarkerClick(marker)}
             color={isSelected ? '#00ff00' : '#ff4444'}
             globeRef={globeRef}
+            isFlat={isFlatMode}
           />
         )
       })}
@@ -149,11 +176,11 @@ function Scene({
         speed={1}
       />
 
-      {/* 轨道控制器 - 支持鼠标拖动旋转 */}
+      {/* 轨道控制器 - 支持鼠标拖动旋转/平移 */}
       <OrbitControls
         enableZoom={true}
-        enablePan={false}
-        enableRotate={true}
+        enablePan={isFlatMode}
+        enableRotate={!isFlatMode}
         zoomSpeed={0.6}
         rotateSpeed={0.4}
       />

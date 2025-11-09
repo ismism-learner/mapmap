@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Mesh } from 'three'
 import { Html } from '@react-three/drei'
-import { lonLatToVector3 } from '../utils/geoUtils'
+import { lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
 
 interface PushpinProps {
   latitude: number
@@ -11,6 +11,9 @@ interface PushpinProps {
   radius?: number
   color?: string
   globeRef?: React.RefObject<Mesh>
+  isFlat?: boolean
+  mapWidth?: number
+  mapHeight?: number
 }
 
 /**
@@ -19,6 +22,7 @@ interface PushpinProps {
  * - 通过连接线角度变化模拟立体感
  * - 支持点击和悬停
  * - 显示标签
+ * - 支持球形和平面两种模式
  */
 function Pushpin({
   latitude,
@@ -27,11 +31,23 @@ function Pushpin({
   onClick,
   radius = 1.01,
   color = '#ff4444',
-  globeRef
+  globeRef,
+  isFlat = false,
+  mapWidth = 4,
+  mapHeight = 2
 }: PushpinProps) {
   const [hovered, setHovered] = useState(false)
 
-  const { x, y, z } = lonLatToVector3(longitude, latitude, radius)
+  // 根据模式计算位置
+  const position = useMemo(() => {
+    if (isFlat) {
+      return lonLatToFlatPosition(longitude, latitude, mapWidth, mapHeight)
+    } else {
+      return lonLatToVector3(longitude, latitude, radius)
+    }
+  }, [isFlat, longitude, latitude, radius, mapWidth, mapHeight])
+
+  const { x, y, z } = position
 
   // 根据位置计算模拟3D的角度
   // 使用经纬度来计算一个角度，模拟光照方向
