@@ -40,7 +40,9 @@ export function parseEventLine(line: string): ParsedEvent | null {
     return null
   }
 
-  const parts = trimmedLine.split(';').map(p => p.trim())
+  // 同时支持中文分号和英文分号
+  const normalizedLine = trimmedLine.replace(/；/g, ';')
+  const parts = normalizedLine.split(';').map(p => p.trim())
 
   // 视频图钉格式：地点;B站链接 (2个部分)
   if (parts.length === 2 && isBilibiliURL(parts[1])) {
