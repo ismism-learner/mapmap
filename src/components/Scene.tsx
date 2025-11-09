@@ -8,6 +8,7 @@ import FlatMapControls from './FlatMapControls'
 import InteractiveBoundary from './InteractiveBoundary'
 import Marker from './Marker'
 import Pushpin from './Pushpin'
+import OptimizedMarkers from './OptimizedMarkers'
 import MarkerConnector from './MarkerConnector'
 import { LayerConfig } from './LayerControl'
 import { City } from '../utils/cityUtils'
@@ -29,6 +30,7 @@ interface SceneProps {
   realisticLighting?: boolean
   texturePath?: string
   isFlatMode?: boolean
+  useOptimizedRendering?: boolean
 }
 
 function Scene({
@@ -44,7 +46,8 @@ function Scene({
   selectedMarkerForConnect = null,
   realisticLighting = false,
   texturePath,
-  isFlatMode = false
+  isFlatMode = false,
+  useOptimizedRendering = true
 }: SceneProps) {
   const { flyTo } = useCameraControls()
   const globeRef = useRef<Mesh>(null)
@@ -127,27 +130,44 @@ function Scene({
         />
       ))}
 
-      {/* 城市标记（搜索功能） */}
-      {cityMarkers.map((city) => (
-        <Marker key={city.id} city={city} onClick={onCityMarkerClick} />
-      ))}
+      {/* 标记渲染 - 支持优化和传统两种模式 */}
+      {useOptimizedRendering ? (
+        /* 优化渲染模式：使用InstancedMesh批量渲染 */
+        <OptimizedMarkers
+          customMarkers={customMarkers}
+          cityMarkers={cityMarkers}
+          onCustomMarkerClick={onCustomMarkerClick}
+          onCityMarkerClick={onCityMarkerClick}
+          isFlat={isFlatMode}
+          selectedMarkerId={selectedMarkerForConnect?.id}
+          globeRef={globeRef}
+        />
+      ) : (
+        <>
+          {/* 传统渲染模式：独立组件渲染 */}
+          {/* 城市标记（搜索功能） */}
+          {cityMarkers.map((city) => (
+            <Marker key={city.id} city={city} onClick={onCityMarkerClick} />
+          ))}
 
-      {/* 自定义图钉标记 */}
-      {customMarkers.map((marker) => {
-        const isSelected = manualConnectMode && selectedMarkerForConnect?.id === marker.id
-        return (
-          <Pushpin
-            key={marker.id}
-            latitude={marker.latitude}
-            longitude={marker.longitude}
-            label={manualConnectMode ? (isSelected ? '✓ 已选中' : marker.info.title) : marker.info.title}
-            onClick={() => onCustomMarkerClick(marker)}
-            color={isSelected ? '#00ff00' : '#ff4444'}
-            globeRef={globeRef}
-            isFlat={isFlatMode}
-          />
-        )
-      })}
+          {/* 自定义图钉标记 */}
+          {customMarkers.map((marker) => {
+            const isSelected = manualConnectMode && selectedMarkerForConnect?.id === marker.id
+            return (
+              <Pushpin
+                key={marker.id}
+                latitude={marker.latitude}
+                longitude={marker.longitude}
+                label={manualConnectMode ? (isSelected ? '✓ 已选中' : marker.info.title) : marker.info.title}
+                onClick={() => onCustomMarkerClick(marker)}
+                color={isSelected ? '#00ff00' : '#ff4444'}
+                globeRef={globeRef}
+                isFlat={isFlatMode}
+              />
+            )
+          })}
+        </>
+      )}
 
       {/* 标记之间的连接线 */}
       {connections.map((connection) => {
