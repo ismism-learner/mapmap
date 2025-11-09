@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import Scene from './components/Scene'
 import LayerControl, { LayerConfig } from './components/LayerControl'
@@ -101,13 +101,13 @@ function App() {
 
   const [flyToCity, setFlyToCity] = useState<{ lon: number; lat: number } | null>(null)
 
-  // 面板切换处理函数
-  const handleToggleEventInput = () => setEventInputOpen(!eventInputOpen)
-  const handleToggleLayerControl = () => setLayerControlOpen(!layerControlOpen)
-  const handleToggleManagement = () => setManagementOpen(!managementOpen)
-  const handleToggleImageUpload = () => setImageUploadOpen(!imageUploadOpen)
-  const handleToggleAdminPanel = () => setAdminPanelOpen(!adminPanelOpen)
-  const handleToggleFontSize = () => setFontSizeOpen(!fontSizeOpen)
+  // 面板切换处理函数（性能优化：使用useCallback避免重复创建函数）
+  const handleToggleEventInput = useCallback(() => setEventInputOpen(prev => !prev), [])
+  const handleToggleLayerControl = useCallback(() => setLayerControlOpen(prev => !prev), [])
+  const handleToggleManagement = useCallback(() => setManagementOpen(prev => !prev), [])
+  const handleToggleImageUpload = useCallback(() => setImageUploadOpen(prev => !prev), [])
+  const handleToggleAdminPanel = useCallback(() => setAdminPanelOpen(prev => !prev), [])
+  const handleToggleFontSize = useCallback(() => setFontSizeOpen(prev => !prev), [])
 
   // 监听地图模式切换，触发过渡动画
   useEffect(() => {
@@ -139,17 +139,17 @@ function App() {
     loadCountries() // 预加载，后续搜索时直接使用缓存
   }, [])
 
-  // 切换图层显示状态
-  const handleLayerToggle = (layerId: string) => {
+  // 切换图层显示状态（性能优化：useCallback）
+  const handleLayerToggle = useCallback((layerId: string) => {
     setLayers((prevLayers) =>
       prevLayers.map((layer) =>
         layer.id === layerId ? { ...layer, visible: !layer.visible } : layer
       )
     )
-  }
+  }, [])
 
-  // 选择城市（从搜索栏）
-  const handleSelectCity = (city: City) => {
+  // 选择城市（从搜索栏）（性能优化：useCallback）
+  const handleSelectCity = useCallback((city: City) => {
     setSelectedCity(city)
     setFlyToCity({
       lon: parseFloat(city.longitude),
@@ -166,10 +166,10 @@ function App() {
 
     // 清除飞行目标（防止重复触发）
     setTimeout(() => setFlyToCity(null), 100)
-  }
+  }, [])
 
-  // 双击地球放置自定义标记
-  const handleDoubleClick = (latitude: number, longitude: number) => {
+  // 双击地球放置自定义标记（性能优化：useCallback）
+  const handleDoubleClick = useCallback((latitude: number, longitude: number) => {
     // 只有管理员模式才能创建标记
     if (!isAdminMode) {
       console.log('用户模式下无法创建标记')
@@ -192,23 +192,23 @@ function App() {
     setCustomMarkers((prev) => [...prev, newMarker])
 
     // 只有在自动连接模式开启时，才自动创建连接线
-    if (autoConnect && lastMarker) {
-      const newConnection: MarkerConnection = {
-        id: generateId(),
-        fromMarkerId: lastMarker.id,
-        toMarkerId: newMarker.id
+    setLastMarker((prevLastMarker) => {
+      if (autoConnect && prevLastMarker) {
+        const newConnection: MarkerConnection = {
+          id: generateId(),
+          fromMarkerId: prevLastMarker.id,
+          toMarkerId: newMarker.id
+        }
+        setConnections((prev) => [...prev, newConnection])
       }
-      setConnections((prev) => [...prev, newConnection])
-    }
-
-    // 更新最后一个标记（用于自动连接）
-    setLastMarker(newMarker)
+      return newMarker
+    })
     // 不再自动打开编辑面板，让用户点击图钉后再打开
     // setSelectedMarker(newMarker)
-  }
+  }, [isAdminMode, autoConnect])
 
-  // 点击国家创建图钉并连接
-  const handleCountryClick = (countryInfo: { id: number; name: string; latitude: number; longitude: number }) => {
+  // 点击国家创建图钉并连接（性能优化：useCallback）
+  const handleCountryClick = useCallback((countryInfo: { id: number; name: string; latitude: number; longitude: number }) => {
     // 只有管理员模式才能创建标记
     if (!isAdminMode) {
       console.log('用户模式下无法创建标记')
@@ -218,78 +218,100 @@ function App() {
     console.log('🌍 点击国家:', countryInfo)
 
     // 检查这个国家是否已经有图钉
-    const existingMarkerId = countryMarkers.get(countryInfo.id)
+    setCountryMarkers(prevCountryMarkers => {
+      const existingMarkerId = prevCountryMarkers.get(countryInfo.id)
 
-    if (existingMarkerId) {
-      // 如果已经有图钉，直接返回（不删除，保持图钉）
-      console.log(`📍 国家 ${countryInfo.name} 已有图钉，跳过创建`)
-      return
-    }
+      if (existingMarkerId) {
+        // 如果已经有图钉，直接返回（不删除，保持图钉）
+        console.log(`📍 国家 ${countryInfo.name} 已有图钉，跳过创建`)
+        return prevCountryMarkers
+      }
 
-    // 创建新图钉
-    const newMarker: CustomMarker = {
-      id: generateId(),
-      latitude: countryInfo.latitude,
-      longitude: countryInfo.longitude,
-      info: {
-        title: countryInfo.name,
-        description: `国家/地区：${countryInfo.name}`,
-        links: [],
-        images: []
-      },
-      createdAt: Date.now()
-    }
+      // 创建新图钉
+      const newMarker: CustomMarker = {
+        id: generateId(),
+        latitude: countryInfo.latitude,
+        longitude: countryInfo.longitude,
+        info: {
+          title: countryInfo.name,
+          description: `国家/地区：${countryInfo.name}`,
+          links: [],
+          images: []
+        },
+        createdAt: Date.now()
+      }
 
-    setCustomMarkers(prev => [...prev, newMarker])
+      setCustomMarkers(prev => [...prev, newMarker])
 
-    // 添加到映射
-    setCountryMarkers(prev => {
-      const newMap = new Map(prev)
+      // 更新选中的国家列表（永久保留，不删除）
+      setSelectedCountries(prev => [...prev, countryInfo.id])
+
+      console.log(`📍 在国家 ${countryInfo.name} 创建永久图钉`)
+
+      // 添加到映射
+      const newMap = new Map(prevCountryMarkers)
       newMap.set(countryInfo.id, newMarker.id)
       return newMap
     })
+  }, [isAdminMode])
 
-    // 更新选中的国家列表（永久保留，不删除）
-    setSelectedCountries(prev => [...prev, countryInfo.id])
+  // 激活锚定事件（允许同一图钉创建多个事件卡）（性能优化：useCallback）
+  const handleActivateEvent = useCallback((marker: CustomMarker) => {
+    setNextEventSide(prevSide => {
+      // 创建新的锚定事件（只保存标记ID）
+      const newEvent: AnchoredEvent = {
+        id: `event-${marker.id}-${Date.now()}`,
+        markerId: marker.id,  // 只保存ID，不保存整个对象
+        side: prevSide,
+      }
 
-    console.log(`📍 在国家 ${countryInfo.name} 创建永久图钉`)
-  }
+      setAnchoredEvents(prev => [...prev, newEvent])
 
-  // 点击自定义标记
-  const handleClickMarker = (marker: CustomMarker) => {
+      // 切换下一个事件的侧边
+      return prevSide === 'left' ? 'right' : 'left'
+    })
+  }, [])
+
+  // 点击自定义标记（性能优化：useCallback）
+  const handleClickMarker = useCallback((marker: CustomMarker) => {
     // 如果在手动连接模式下
     if (manualConnectMode) {
-      if (!firstMarkerForConnect) {
-        // 选择第一个图钉作为起点
-        setFirstMarkerForConnect(marker)
-        console.log('🎯 选择起点:', marker.info.title)
-      } else if (firstMarkerForConnect.id === marker.id) {
-        // 双击同一个图钉，取消选择
-        setFirstMarkerForConnect(null)
-        console.log('❌ 取消选择起点')
-      } else {
-        // 选择第二个图钉，创建连接
-        const newConnection: MarkerConnection = {
-          id: generateId(),
-          fromMarkerId: firstMarkerForConnect.id,
-          toMarkerId: marker.id
+      setFirstMarkerForConnect(prevFirst => {
+        if (!prevFirst) {
+          // 选择第一个图钉作为起点
+          console.log('🎯 选择起点:', marker.info.title)
+          return marker
+        } else if (prevFirst.id === marker.id) {
+          // 双击同一个图钉，取消选择
+          console.log('❌ 取消选择起点')
+          return null
+        } else {
+          // 选择第二个图钉，创建连接
+          const newConnection: MarkerConnection = {
+            id: generateId(),
+            fromMarkerId: prevFirst.id,
+            toMarkerId: marker.id
+          }
+
+          // 检查是否已存在连接
+          setConnections(prevConnections => {
+            const connectionExists = prevConnections.some(
+              c => (c.fromMarkerId === prevFirst.id && c.toMarkerId === marker.id) ||
+                   (c.fromMarkerId === marker.id && c.toMarkerId === prevFirst.id)
+            )
+
+            if (!connectionExists) {
+              console.log(`✅ 创建连接: ${prevFirst.info.title} → ${marker.info.title}`)
+              return [...prevConnections, newConnection]
+            }
+            return prevConnections
+          })
+
+          // 将当前图钉设为新起点，支持连续连接
+          console.log('🎯 新起点:', marker.info.title)
+          return marker
         }
-
-        // 检查是否已存在连接
-        const connectionExists = connections.some(
-          c => (c.fromMarkerId === firstMarkerForConnect.id && c.toMarkerId === marker.id) ||
-               (c.fromMarkerId === marker.id && c.toMarkerId === firstMarkerForConnect.id)
-        )
-
-        if (!connectionExists) {
-          setConnections((prev) => [...prev, newConnection])
-          console.log(`✅ 创建连接: ${firstMarkerForConnect.info.title} → ${marker.info.title}`)
-        }
-
-        // 将当前图钉设为新起点，支持连续连接
-        setFirstMarkerForConnect(marker)
-        console.log('🎯 新起点:', marker.info.title)
-      }
+      })
     } else if (eventCardMode) {
       // 事件卡模式：激活锚定事件面板
       handleActivateEvent(marker)
@@ -297,77 +319,62 @@ function App() {
       console.log('📋 创建事件卡:', marker.info.title)
     }
     // 否则什么都不做（图钉/连接模式下，只通过手动连接创建连接）
-  }
+  }, [manualConnectMode, eventCardMode, handleActivateEvent])
 
-  // 激活锚定事件（允许同一图钉创建多个事件卡）
-  const handleActivateEvent = (marker: CustomMarker) => {
-    // 创建新的锚定事件（只保存标记ID）
-    const newEvent: AnchoredEvent = {
-      id: `event-${marker.id}-${Date.now()}`,
-      markerId: marker.id,  // 只保存ID，不保存整个对象
-      side: nextEventSide,
-    }
-
-    setAnchoredEvents(prev => [...prev, newEvent])
-
-    // 切换下一个事件的侧边
-    setNextEventSide(prev => prev === 'left' ? 'right' : 'left')
-  }
-
-  // 停用锚定事件
-  const handleDeactivateEvent = (eventId: string) => {
+  // 停用锚定事件（性能优化：useCallback）
+  const handleDeactivateEvent = useCallback((eventId: string) => {
     setAnchoredEvents(prev => prev.filter(e => e.id !== eventId))
-  }
+  }, [])
 
-  // 更新连接线坐标
-  const handleConnectorLinesUpdate = (lines: ConnectorLine[]) => {
+  // 更新连接线坐标（性能优化：useCallback）
+  const handleConnectorLinesUpdate = useCallback((lines: ConnectorLine[]) => {
     setConnectorLines(lines)
-  }
+  }, [])
 
-  // 编辑事件详情
-  const handleEditEventDetails = (marker: CustomMarker) => {
+  // 编辑事件详情（性能优化：useCallback）
+  const handleEditEventDetails = useCallback((marker: CustomMarker) => {
     setSelectedMarker(marker)
-  }
+  }, [])
 
-  // 保存标记信息
-  const handleSaveMarkerInfo = (updatedInfo: MarkerInfo) => {
-    if (!selectedMarker) return
+  // 保存标记信息（性能优化：useCallback）
+  const handleSaveMarkerInfo = useCallback((updatedInfo: MarkerInfo) => {
+    setSelectedMarker(prevSelectedMarker => {
+      if (!prevSelectedMarker) return null
 
-    setCustomMarkers((prev) =>
-      prev.map((m) =>
-        m.id === selectedMarker.id ? { ...m, info: updatedInfo } : m
+      setCustomMarkers((prev) =>
+        prev.map((m) =>
+          m.id === prevSelectedMarker.id ? { ...m, info: updatedInfo } : m
+        )
       )
-    )
 
-    setSelectedMarker((prev) =>
-      prev ? { ...prev, info: updatedInfo } : null
-    )
-  }
+      return { ...prevSelectedMarker, info: updatedInfo }
+    })
+  }, [])
 
-  // 删除自定义标记
-  const handleDeleteMarker = () => {
-    if (!selectedMarker) return
+  // 删除自定义标记（性能优化：useCallback）
+  const handleDeleteMarker = useCallback(() => {
+    setSelectedMarker(prevSelectedMarker => {
+      if (!prevSelectedMarker) return null
 
-    // 删除标记
-    setCustomMarkers((prev) => prev.filter((m) => m.id !== selectedMarker.id))
+      // 删除标记
+      setCustomMarkers((prev) => prev.filter((m) => m.id !== prevSelectedMarker.id))
 
-    // 删除与此标记相关的连接线
-    setConnections((prev) =>
-      prev.filter(
-        (c) => c.fromMarkerId !== selectedMarker.id && c.toMarkerId !== selectedMarker.id
+      // 删除与此标记相关的连接线
+      setConnections((prev) =>
+        prev.filter(
+          (c) => c.fromMarkerId !== prevSelectedMarker.id && c.toMarkerId !== prevSelectedMarker.id
+        )
       )
-    )
 
-    // 如果这是最后一个标记，清除
-    if (lastMarker?.id === selectedMarker.id) {
-      setLastMarker(null)
-    }
+      // 如果这是最后一个标记，清除
+      setLastMarker(prevLast => prevLast?.id === prevSelectedMarker.id ? null : prevLast)
 
-    setSelectedMarker(null)
-  }
+      return null
+    })
+  }, [])
 
-  // 删除标记（通过ID，用于管理面板）
-  const handleDeleteMarkerById = (markerId: string) => {
+  // 删除标记（通过ID，用于管理面板）（性能优化：useCallback）
+  const handleDeleteMarkerById = useCallback((markerId: string) => {
     // 删除标记
     setCustomMarkers((prev) => prev.filter((m) => m.id !== markerId))
 
@@ -379,108 +386,113 @@ function App() {
     )
 
     // 如果这是最后一个标记，清除
-    if (lastMarker?.id === markerId) {
-      setLastMarker(null)
-    }
+    setLastMarker(prevLast => prevLast?.id === markerId ? null : prevLast)
 
     // 如果这是选中的标记，清除选中状态
-    if (selectedMarker?.id === markerId) {
-      setSelectedMarker(null)
-    }
-  }
+    setSelectedMarker(prevSelected => prevSelected?.id === markerId ? null : prevSelected)
+  }, [])
 
-  // 删除连接（用于管理面板）
-  const handleDeleteConnection = (connectionId: string) => {
+  // 删除连接（用于管理面板）（性能优化：useCallback）
+  const handleDeleteConnection = useCallback((connectionId: string) => {
     setConnections((prev) => prev.filter((c) => c.id !== connectionId))
-  }
+  }, [])
 
-  // 处理标签拖动
-  const handleLabelDrag = (markerId: string, offset: { x: number; y: number }) => {
+  // 处理标签拖动（性能优化：useCallback）
+  const handleLabelDrag = useCallback((markerId: string, offset: { x: number; y: number }) => {
     setCustomMarkers((prev) =>
       prev.map((m) =>
         m.id === markerId ? { ...m, labelOffset: offset } : m
       )
     )
-  }
+  }, [])
 
-  // 处理连接线标签修改
-  const handleConnectionLabelChange = (connectionId: string, newLabel: string) => {
+  // 处理连接线标签修改（性能优化：useCallback）
+  const handleConnectionLabelChange = useCallback((connectionId: string, newLabel: string) => {
     setConnections((prev) =>
       prev.map((c) =>
         c.id === connectionId ? { ...c, label: newLabel } : c
       )
     )
-  }
+  }, [])
 
-  // 切换自动连接模式（与手动连接互斥）
-  const handleToggleAutoConnect = () => {
-    const newAutoConnect = !autoConnect
-    setAutoConnect(newAutoConnect)
+  // 切换自动连接模式（与手动连接互斥）（性能优化：useCallback）
+  const handleToggleAutoConnect = useCallback(() => {
+    setAutoConnect(prevAutoConnect => {
+      const newAutoConnect = !prevAutoConnect
 
-    // 开启自动连接时，关闭手动连接
-    if (newAutoConnect) {
-      setManualConnectMode(false)
-      setFirstMarkerForConnect(null)
-    }
+      // 开启自动连接时，关闭手动连接
+      if (newAutoConnect) {
+        setManualConnectMode(false)
+        setFirstMarkerForConnect(null)
+      }
 
-    // 关闭自动连接时，清除最后一个标记
-    if (!newAutoConnect) {
-      setLastMarker(null)
-    }
-  }
+      // 关闭自动连接时，清除最后一个标记
+      if (!newAutoConnect) {
+        setLastMarker(null)
+      }
 
-  // 切换手动连接模式（与自动连接互斥）
-  const handleToggleManualConnect = () => {
-    const newManualConnect = !manualConnectMode
-    setManualConnectMode(newManualConnect)
+      return newAutoConnect
+    })
+  }, [])
 
-    // 开启手动连接时，关闭自动连接
-    if (newManualConnect) {
-      setAutoConnect(false)
-      setLastMarker(null)
-    }
+  // 切换手动连接模式（与自动连接互斥）（性能优化：useCallback）
+  const handleToggleManualConnect = useCallback(() => {
+    setManualConnectMode(prevManualConnect => {
+      const newManualConnect = !prevManualConnect
 
-    setFirstMarkerForConnect(null) // 重置选择
-    if (!newManualConnect) {
-      setSelectedMarker(null) // 退出手动连接模式时关闭信息面板
-    }
-  }
+      // 开启手动连接时，关闭自动连接
+      if (newManualConnect) {
+        setAutoConnect(false)
+        setLastMarker(null)
+      }
 
-  // 切换事件卡模式
-  const handleToggleEventCardMode = () => {
-    const newEventCardMode = !eventCardMode
-    setEventCardMode(newEventCardMode)
+      setFirstMarkerForConnect(null) // 重置选择
+      if (!newManualConnect) {
+        setSelectedMarker(null) // 退出手动连接模式时关闭信息面板
+      }
 
-    // 开启事件卡模式时，给出提示
-    if (newEventCardMode) {
-      console.log('📋 事件卡模式已开启 - 点击图钉创建事件卡')
-    } else {
-      console.log('📋 事件卡模式已关闭')
-    }
-  }
+      return newManualConnect
+    })
+  }, [])
 
-  // 切换上色模式
-  const handleTogglePaintMode = () => {
-    setPaintMode(!paintMode)
-  }
+  // 切换事件卡模式（性能优化：useCallback）
+  const handleToggleEventCardMode = useCallback(() => {
+    setEventCardMode(prevEventCardMode => {
+      const newEventCardMode = !prevEventCardMode
 
-  // 更改选中的颜色
-  const handleColorChange = (color: string) => {
+      // 开启事件卡模式时，给出提示
+      if (newEventCardMode) {
+        console.log('📋 事件卡模式已开启 - 点击图钉创建事件卡')
+      } else {
+        console.log('📋 事件卡模式已关闭')
+      }
+
+      return newEventCardMode
+    })
+  }, [])
+
+  // 切换上色模式（性能优化：useCallback）
+  const handleTogglePaintMode = useCallback(() => {
+    setPaintMode(prev => !prev)
+  }, [])
+
+  // 更改选中的颜色（性能优化：useCallback）
+  const handleColorChange = useCallback((color: string) => {
     setSelectedColor(color)
-  }
+  }, [])
 
-  // 国家上色
-  const handleCountryPaint = (countryId: number, color: string) => {
+  // 国家上色（性能优化：useCallback）
+  const handleCountryPaint = useCallback((countryId: number, color: string) => {
     setCountryColors(prev => {
       const newMap = new Map(prev)
       newMap.set(countryId, color)
       return newMap
     })
     console.log(`🎨 国家 ${countryId} 上色为 ${color}`)
-  }
+  }, [])
 
-  // 批量创建事件
-  const handleCreateEvents = async (eventText: string) => {
+  // 批量创建事件（性能优化：useCallback）
+  const handleCreateEvents = useCallback(async (eventText: string) => {
     console.log('📝 开始批量创建事件...')
 
     // 解析事件文本
@@ -608,61 +620,74 @@ function App() {
     setConnections(prev => [...prev, ...newConnections])
 
     console.log(`✅ 成功创建 ${allNewMarkers.length} 个标记和 ${newConnections.length} 个连接`)
-  }
+  }, [cities])
 
-  // 处理生成测试标记
-  const handleGenerateTestMarkers = (markers: CustomMarker[]) => {
+  // 处理生成测试标记（性能优化：useCallback）
+  const handleGenerateTestMarkers = useCallback((markers: CustomMarker[]) => {
     setCustomMarkers(markers)
     setConnections([]) // 清除连接线
     setLastMarker(null)
     setSelectedMarker(null)
-  }
+  }, [])
 
-  // 导入数据
-  const handleImportData = (data: { markers: CustomMarker[], connections: MarkerConnection[] }) => {
+  // 导入数据（性能优化：useCallback）
+  const handleImportData = useCallback((data: { markers: CustomMarker[], connections: MarkerConnection[] }) => {
     setCustomMarkers(data.markers)
     setConnections(data.connections)
     setLastMarker(null)
     setSelectedMarker(null)
     setFirstMarkerForConnect(null)
-  }
+  }, [])
 
-  // 切换管理员模式
-  const handleToggleAdminMode = () => {
-    setIsAdminMode(!isAdminMode)
-    if (isAdminMode) {
-      // 切换到用户模式时，关闭所有编辑面板
-      setSelectedMarker(null)
-      setManualConnectMode(false)
-      setFirstMarkerForConnect(null)
-    }
-  }
+  // 切换管理员模式（性能优化：useCallback）
+  const handleToggleAdminMode = useCallback(() => {
+    setIsAdminMode(prevIsAdminMode => {
+      if (prevIsAdminMode) {
+        // 切换到用户模式时，关闭所有编辑面板
+        setSelectedMarker(null)
+        setManualConnectMode(false)
+        setFirstMarkerForConnect(null)
+      }
+      return !prevIsAdminMode
+    })
+  }, [])
 
-  // 处理图片上传
-  const handleImageUpload = (imageUrl: string) => {
-    if (!selectedMarker) {
-      console.warn('⚠️ 没有选中的标记，无法上传图片')
-      return
-    }
+  // 处理图片上传（性能优化：useCallback）
+  const handleImageUpload = useCallback((imageUrl: string) => {
+    setSelectedMarker(prevSelectedMarker => {
+      if (!prevSelectedMarker) {
+        console.warn('⚠️ 没有选中的标记，无法上传图片')
+        return null
+      }
 
-    // 创建图片对象
-    const newImage = {
-      id: generateId(),
-      url: imageUrl,
-      alt: `图片 ${selectedMarker.info.images.length + 1}`
-    }
+      // 创建图片对象
+      const newImage = {
+        id: generateId(),
+        url: imageUrl,
+        alt: `图片 ${prevSelectedMarker.info.images.length + 1}`
+      }
 
-    // 添加图片到当前选中的标记
-    const updatedInfo: MarkerInfo = {
-      ...selectedMarker.info,
-      images: [...selectedMarker.info.images, newImage]
-    }
+      // 添加图片到当前选中的标记
+      const updatedInfo: MarkerInfo = {
+        ...prevSelectedMarker.info,
+        images: [...prevSelectedMarker.info.images, newImage]
+      }
 
-    handleSaveMarkerInfo(updatedInfo)
-  }
+      setCustomMarkers((prev) =>
+        prev.map((m) =>
+          m.id === prevSelectedMarker.id ? { ...m, info: updatedInfo } : m
+        )
+      )
 
-  // 获取当前选中的底图路径
-  const currentTexturePath = textures.find(t => t.id === selectedTexture)?.path
+      return { ...prevSelectedMarker, info: updatedInfo }
+    })
+  }, [])
+
+  // 获取当前选中的底图路径（性能优化：useMemo）
+  const currentTexturePath = useMemo(
+    () => textures.find(t => t.id === selectedTexture)?.path,
+    [textures, selectedTexture]
+  )
 
   return (
     <div className="app">

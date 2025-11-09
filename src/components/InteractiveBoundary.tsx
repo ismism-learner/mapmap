@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from 'react'
+import { useEffect, useState, useRef, useMemo, memo } from 'react'
 import * as THREE from 'three'
 import { Line } from '@react-three/drei'
 import { loadShapefile, lonLatToVector3, lonLatToFlatPosition, vector3ToLonLat } from '../utils/geoUtils'
@@ -393,4 +393,5 @@ function InteractiveBoundary({
   )
 }
 
-export default InteractiveBoundary
+// 性能优化：使用 React.memo 避免不必要的重渲染
+export default memo(InteractiveBoundary)

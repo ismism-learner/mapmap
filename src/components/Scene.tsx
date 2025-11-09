@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, memo } from 'react'
 import { Mesh } from 'three'
 import { ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
@@ -318,4 +318,5 @@ function Scene({
   )
 }
 
-export default Scene
+// 性能优化：使用 React.memo 避免不必要的重渲染
+export default memo(Scene)
