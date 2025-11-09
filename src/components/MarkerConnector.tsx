@@ -1,7 +1,6 @@
-import { useMemo, useState, useRef, memo } from 'react'
+import { useMemo, useState, memo } from 'react'
 import { Vector3, QuadraticBezierCurve3, Mesh } from 'three'
 import { Line, Html } from '@react-three/drei'
-import { useFrame } from '@react-three/fiber'
 import { lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
 import { CustomMarker, MarkerConnection } from '../types/customMarker'
 
@@ -49,8 +48,6 @@ function MarkerConnector({
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(label)
   const [hovered, setHovered] = useState(false)
-  const progressRef = useRef(0)
-  const [dollarPosition, setDollarPosition] = useState<Vector3>(new Vector3())
 
   // 计算连线的点和标签位置
   const { points, labelPosition } = useMemo(() => {
@@ -167,39 +164,24 @@ function MarkerConnector({
     }
   }
 
-  // 美元符号沿着曲线移动（极致性能优化）
-  const frameCountRef = useRef(0)
-  const dollarPositionRef = useRef<Vector3>(new Vector3())
+  // 计算3个箭头位置（静态，不需要useFrame）
+  const arrowPositions = useMemo(() => {
+    if (points.length < 2) return []
 
-  useFrame((_state, delta) => {
-    // 每10帧更新一次，减少90%的计算量
-    frameCountRef.current++
-    if (frameCountRef.current % 10 !== 0) return
-
-    if (points.length > 1) {
-      // 更新进度（0到1循环）
-      progressRef.current += delta * 0.5
-      if (progressRef.current > 1) {
-        progressRef.current = 0
-      }
-
-      // 计算美元符号在曲线上的位置
-      const index = Math.floor(progressRef.current * (points.length - 1))
+    // 在25%, 50%, 75%位置放置箭头
+    const positions = [0.25, 0.5, 0.75].map((t) => {
+      const index = Math.floor(t * (points.length - 1))
       const nextIndex = Math.min(index + 1, points.length - 1)
-      const localProgress = (progressRef.current * (points.length - 1)) - index
+      const localT = (t * (points.length - 1)) - index
 
-      const currentPoint = points[index]
-      const nextPoint = points[nextIndex]
+      const current = points[index]
+      const next = points[nextIndex]
 
-      // 直接更新ref，避免触发React重渲染
-      dollarPositionRef.current.lerpVectors(currentPoint, nextPoint, localProgress)
+      return new Vector3().lerpVectors(current, next, localT)
+    })
 
-      // 仅在位置变化较大时才更新state（减少重渲染）
-      if (dollarPositionRef.current.distanceTo(dollarPosition) > 0.01) {
-        setDollarPosition(dollarPositionRef.current.clone())
-      }
-    }
-  })
+    return positions
+  }, [points])
 
   return (
     <group>
@@ -233,10 +215,11 @@ function MarkerConnector({
         }}
       />
 
-      {/* 美元符号 - 沿曲线移动，始终面向观察者 */}
-      {dollarPosition && (
+      {/* 3个箭头 - 用CSS动画创造移动错觉（零useFrame性能开销） */}
+      {arrowPositions.map((position, index) => (
         <Html
-          position={[dollarPosition.x, dollarPosition.y, dollarPosition.z]}
+          key={index}
+          position={[position.x, position.y, position.z]}
           center
           occlude={globeRef ? [globeRef] : undefined}
           transform
@@ -255,21 +238,24 @@ function MarkerConnector({
               fontWeight: 'bold',
               textShadow: '0 0 6px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 255, 255, 0.8)',
               userSelect: 'none',
-              animation: 'pulse 1s ease-in-out infinite',
+              animation: `flowArrow 1.5s ease-in-out infinite`,
+              animationDelay: `${index * 0.5}s`, // 依次延迟，创造流动效果
             }}
           >
-            $
+            →
           </div>
-          <style>
-            {`
-              @keyframes pulse {
-                0%, 100% { opacity: 0.8; transform: scale(1); }
-                50% { opacity: 1; transform: scale(1.1); }
-              }
-            `}
-          </style>
+          {index === 0 && (
+            <style>
+              {`
+                @keyframes flowArrow {
+                  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+                  50% { opacity: 1; transform: scale(1.2); }
+                }
+              `}
+            </style>
+          )}
         </Html>
-      )}
+      ))}
 
       {/* 标签编辑（只在编辑时显示） */}
       {!connection.eventInfo && isEditing && (
