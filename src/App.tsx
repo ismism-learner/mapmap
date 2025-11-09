@@ -308,20 +308,36 @@ function App() {
     )
   }
 
-  // 切换自动连接模式
+  // 切换自动连接模式（与手动连接互斥）
   const handleToggleAutoConnect = () => {
-    setAutoConnect(!autoConnect)
+    const newAutoConnect = !autoConnect
+    setAutoConnect(newAutoConnect)
+
+    // 开启自动连接时，关闭手动连接
+    if (newAutoConnect) {
+      setManualConnectMode(false)
+      setFirstMarkerForConnect(null)
+    }
+
     // 关闭自动连接时，清除最后一个标记
-    if (autoConnect) {
+    if (!newAutoConnect) {
       setLastMarker(null)
     }
   }
 
-  // 切换手动连接模式
+  // 切换手动连接模式（与自动连接互斥）
   const handleToggleManualConnect = () => {
-    setManualConnectMode(!manualConnectMode)
+    const newManualConnect = !manualConnectMode
+    setManualConnectMode(newManualConnect)
+
+    // 开启手动连接时，关闭自动连接
+    if (newManualConnect) {
+      setAutoConnect(false)
+      setLastMarker(null)
+    }
+
     setFirstMarkerForConnect(null) // 重置选择
-    if (manualConnectMode) {
+    if (!newManualConnect) {
       setSelectedMarker(null) // 退出手动连接模式时关闭信息面板
     }
   }
