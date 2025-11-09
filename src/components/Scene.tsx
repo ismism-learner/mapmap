@@ -11,6 +11,7 @@ import { LayerConfig } from './LayerControl'
 import { City } from '../utils/cityUtils'
 import { CustomMarker, MarkerConnection } from '../types/customMarker'
 import { useCameraControls } from '../hooks/useCameraControls'
+import { vector3ToLonLat } from '../utils/geoUtils'
 
 interface SceneProps {
   layers: LayerConfig[]
@@ -21,6 +22,8 @@ interface SceneProps {
   onCustomMarkerClick: (marker: CustomMarker) => void
   onDoubleClick: (latitude: number, longitude: number) => void
   flyToCity: { lon: number; lat: number } | null
+  isConnectMode?: boolean
+  selectedMarkerForConnect?: CustomMarker | null
 }
 
 function Scene({
@@ -31,7 +34,9 @@ function Scene({
   onCityMarkerClick,
   onCustomMarkerClick,
   onDoubleClick,
-  flyToCity
+  flyToCity,
+  isConnectMode = false,
+  selectedMarkerForConnect = null
 }: SceneProps) {
   const { flyTo } = useCameraControls()
   const globeRef = useRef<Mesh>(null)
@@ -49,9 +54,7 @@ function Scene({
     const point = event.point
 
     // 将3D坐标转换为经纬度
-    const radius = Math.sqrt(point.x ** 2 + point.y ** 2 + point.z ** 2)
-    const latitude = 90 - (Math.acos(point.y / radius) * 180) / Math.PI
-    const longitude = ((Math.atan2(point.z, -point.x) * 180) / Math.PI + 180) % 360 - 180
+    const { latitude, longitude } = vector3ToLonLat(point.x, point.y, point.z)
 
     onDoubleClick(latitude, longitude)
   }
@@ -85,16 +88,19 @@ function Scene({
       ))}
 
       {/* 自定义图钉标记 */}
-      {customMarkers.map((marker) => (
-        <Pushpin
-          key={marker.id}
-          latitude={marker.latitude}
-          longitude={marker.longitude}
-          label={marker.info.title}
-          onClick={() => onCustomMarkerClick(marker)}
-          color="#ff4444"
-        />
-      ))}
+      {customMarkers.map((marker) => {
+        const isSelected = isConnectMode && selectedMarkerForConnect?.id === marker.id
+        return (
+          <Pushpin
+            key={marker.id}
+            latitude={marker.latitude}
+            longitude={marker.longitude}
+            label={isConnectMode ? (isSelected ? '✓ 已选中' : marker.info.title) : marker.info.title}
+            onClick={() => onCustomMarkerClick(marker)}
+            color={isSelected ? '#00ff00' : '#ff4444'}
+          />
+        )
+      })}
 
       {/* 标记之间的连接线 */}
       {connections.map((connection) => {

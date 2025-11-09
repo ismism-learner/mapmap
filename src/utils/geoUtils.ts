@@ -89,3 +89,20 @@ export function lonLatToVector3(lon: number, lat: number, radius: number = 1) {
 
   return { x, y, z }
 }
+
+/**
+ * 将3D坐标转换为经纬度
+ * @param x - X坐标
+ * @param y - Y坐标
+ * @param z - Z坐标
+ */
+export function vector3ToLonLat(x: number, y: number, z: number) {
+  const radius = Math.sqrt(x * x + y * y + z * z)
+  const phi = Math.acos(y / radius)
+  const theta = Math.atan2(z, -x)
+
+  const latitude = 90 - (phi * 180) / Math.PI
+  const longitude = (theta * 180) / Math.PI - 180
+
+  return { latitude, longitude }
+}

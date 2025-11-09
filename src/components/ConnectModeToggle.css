@@ -1,0 +1,74 @@
+.connect-mode-toggle {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.connect-mode-btn {
+  padding: 12px 24px;
+  background: rgba(30, 30, 40, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.connect-mode-btn:hover {
+  background: rgba(40, 40, 50, 0.95);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.connect-mode-btn.active {
+  background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%);
+  border-color: #00ffff;
+  color: #000;
+  animation: pulse 2s infinite;
+}
+
+.connect-mode-btn.active:hover {
+  background: linear-gradient(135deg, #33ffff 0%, #33aaff 100%);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(0, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(0, 255, 255, 0.6);
+  }
+}
+
+.connect-mode-hint {
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
