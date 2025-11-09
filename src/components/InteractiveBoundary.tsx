@@ -169,6 +169,32 @@ function InteractiveBoundary({
     }
   }
 
+  // 在顶层预计算所有几何体，避免在循环中使用hooks
+  const geometriesCache = useMemo(() => {
+    const cache = new Map<number, any[]>()
+
+    features.forEach(feature => {
+      const fillColor = countryColors.get(feature.id)
+
+      // 只在球形模式且未上色时创建几何体
+      if (!fillColor && !isFlat) {
+        const geometries = feature.lines.map((line) => {
+          if (line.length < 3) return null
+          try {
+            return new ConvexGeometry(line)
+          } catch (error) {
+            console.warn(`Failed to create click geometry for feature ${feature.id}:`, error)
+            return null
+          }
+        }).filter(Boolean)
+
+        cache.set(feature.id, geometries)
+      }
+    })
+
+    return cache
+  }, [features, countryColors, isFlat])
+
   if (!visible || loading || features.length === 0) {
     return null
   }
@@ -179,22 +205,7 @@ function InteractiveBoundary({
         const isSelected = selectedCountries.includes(feature.id)
         const isHovered = hoveredId === feature.id
         const fillColor = countryColors.get(feature.id)
-
-        // 缓存凸包几何体，避免每次渲染都创建
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        const clickGeometries = useMemo(() => {
-          if (fillColor || isFlat) return null
-
-          return feature.lines.map((line, idx) => {
-            if (line.length < 3) return null
-            try {
-              return new ConvexGeometry(line)
-            } catch (error) {
-              console.warn(`Failed to create click geometry for feature ${feature.id}:`, error)
-              return null
-            }
-          }).filter(Boolean)
-        }, [feature.id, feature.lines.length, fillColor, isFlat])
+        const clickGeometries = geometriesCache.get(feature.id)
 
         return (
           <group key={`feature-${feature.id}`}>
