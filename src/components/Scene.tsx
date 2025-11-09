@@ -31,6 +31,7 @@ interface SceneProps {
   texturePath?: string
   isFlatMode?: boolean
   useOptimizedRendering?: boolean
+  onLabelDrag?: (markerId: string, offset: { x: number; y: number }) => void
 }
 
 function Scene({
@@ -47,7 +48,8 @@ function Scene({
   realisticLighting = false,
   texturePath,
   isFlatMode = false,
-  useOptimizedRendering = true
+  useOptimizedRendering = true,
+  onLabelDrag
 }: SceneProps) {
   const { flyTo } = useCameraControls()
   const globeRef = useRef<Mesh>(null)
@@ -163,6 +165,8 @@ function Scene({
                 color={isSelected ? '#00ff00' : '#ff4444'}
                 globeRef={globeRef}
                 isFlat={isFlatMode}
+                labelOffset={marker.labelOffset}
+                onLabelDrag={onLabelDrag ? (offset) => onLabelDrag(marker.id, offset) : undefined}
               />
             )
           })}

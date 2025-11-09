@@ -228,6 +228,15 @@ function App() {
     setSelectedMarker(null)
   }
 
+  // 处理标签拖动
+  const handleLabelDrag = (markerId: string, offset: { x: number; y: number }) => {
+    setCustomMarkers((prev) =>
+      prev.map((m) =>
+        m.id === markerId ? { ...m, labelOffset: offset } : m
+      )
+    )
+  }
+
   // 切换自动连接模式
   const handleToggleAutoConnect = () => {
     setAutoConnect(!autoConnect)
@@ -368,6 +377,7 @@ function App() {
           texturePath={currentTexturePath}
           isFlatMode={isFlatMode}
           useOptimizedRendering={true}
+          onLabelDrag={handleLabelDrag}
         />
       </Canvas>
 

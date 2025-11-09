@@ -7,6 +7,7 @@ export interface CustomMarker {
   longitude: number
   info: MarkerInfo
   createdAt: number
+  labelOffset?: { x: number; y: number } // 标签偏移位置（像素）
 }
 
 /**
