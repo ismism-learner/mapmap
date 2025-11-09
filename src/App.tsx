@@ -220,25 +220,8 @@ function App() {
     const existingMarkerId = countryMarkers.get(countryInfo.id)
 
     if (existingMarkerId) {
-      // 如果已经有图钉，从选择列表中移除该国家
-      setSelectedCountries(prev => prev.filter(id => id !== countryInfo.id))
-
-      // 删除该国家的图钉
-      setCustomMarkers(prev => prev.filter(m => m.id !== existingMarkerId))
-
-      // 删除相关的连接线
-      setConnections(prev => prev.filter(c =>
-        c.fromMarkerId !== existingMarkerId && c.toMarkerId !== existingMarkerId
-      ))
-
-      // 从映射中移除
-      setCountryMarkers(prev => {
-        const newMap = new Map(prev)
-        newMap.delete(countryInfo.id)
-        return newMap
-      })
-
-      console.log(`🗑️ 移除国家 ${countryInfo.name} 的图钉`)
+      // 如果已经有图钉，直接返回（不删除，保持图钉）
+      console.log(`📍 国家 ${countryInfo.name} 已有图钉，跳过创建`)
       return
     }
 

@@ -181,13 +181,21 @@ function MarkerConnector({
           e.stopPropagation()
           setHovered(false)
         }}
+        onPointerDown={(e) => {
+          // 阻止指针按下事件，防止触发相机移动
+          e.stopPropagation()
+        }}
+        onPointerUp={(e) => {
+          // 阻止指针抬起事件，防止触发相机移动
+          e.stopPropagation()
+        }}
         onClick={(e) => {
-          // 阻止单击事件冒泡，避免干扰双击检测
+          // 阻止单击事件冒泡，避免干扰双击检测和相机控制
           e.stopPropagation()
         }}
         onDoubleClick={(e) => {
           e.stopPropagation()
-          // 同时阻止默认行为，确保事件不会继续传播
+          // 同时阻止默认行为，确保事件不会继续传播到相机控制
           if (e.nativeEvent) {
             e.nativeEvent.stopImmediatePropagation()
           }
