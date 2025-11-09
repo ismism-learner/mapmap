@@ -18,6 +18,8 @@ interface MarkerConnectorProps {
   label?: string // 连接线标签
   onLabelChange?: (newLabel: string) => void // 标签修改回调
   globeRef?: React.RefObject<Mesh> // 地球引用，用于遮挡检测
+  labelFontSize?: number // 标签字体大小
+  dollarFontSize?: number // 美元符号字体大小
 }
 
 /**
@@ -40,7 +42,9 @@ function MarkerConnector({
   mapHeight = 2,
   label = '',
   onLabelChange,
-  globeRef
+  globeRef,
+  labelFontSize = 20,
+  dollarFontSize = 25
 }: MarkerConnectorProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(label)
@@ -226,7 +230,7 @@ function MarkerConnector({
           <div
             style={{
               color: color,
-              fontSize: '25px',
+              fontSize: `${dollarFontSize}px`,
               fontWeight: 'bold',
               textShadow: '0 0 6px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 255, 255, 0.8)',
               userSelect: 'none',
@@ -340,7 +344,7 @@ function MarkerConnector({
               color: 'white',
               padding: hovered && connection.eventInfo ? '10px 14px' : '4px 10px',
               borderRadius: hovered && connection.eventInfo ? '8px' : '5px',
-              fontSize: '20px',
+              fontSize: `${labelFontSize}px`,
               fontWeight: '500',
               whiteSpace: 'nowrap',
               border: hovered && connection.eventInfo ? '2px solid #00ffff' : '1px solid rgba(0, 255, 255, 0.3)',

@@ -10,6 +10,7 @@ interface UnifiedToolbarProps {
   onToggleManagement: () => void
   onToggleImageUpload: () => void
   onToggleAdminPanel: () => void
+  onToggleFontSize: () => void
   autoConnectEnabled: boolean
   manualConnectEnabled: boolean
   eventInputOpen: boolean
@@ -17,6 +18,7 @@ interface UnifiedToolbarProps {
   managementOpen: boolean
   imageUploadOpen: boolean
   adminPanelOpen: boolean
+  fontSizeOpen: boolean
 }
 
 /**
@@ -32,13 +34,15 @@ function UnifiedToolbar({
   onToggleManagement,
   onToggleImageUpload,
   onToggleAdminPanel,
+  onToggleFontSize,
   autoConnectEnabled,
   manualConnectEnabled,
   eventInputOpen,
   layerControlOpen,
   managementOpen,
   imageUploadOpen,
-  adminPanelOpen
+  adminPanelOpen,
+  fontSizeOpen
 }: UnifiedToolbarProps) {
   const [expanded, setExpanded] = useState(true)
 
@@ -154,6 +158,19 @@ function UnifiedToolbar({
               <circle cx="12" cy="12" r="3" />
               <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3" />
               <path d="m19.07 4.93-4.24 4.24m0 5.66 4.24 4.24M4.93 4.93l4.24 4.24m0 5.66-4.24 4.24" />
+            </svg>
+          </button>
+
+          {/* 字体大小调节 */}
+          <button
+            className={`toolbar-btn ${fontSizeOpen ? 'active' : ''}`}
+            onClick={onToggleFontSize}
+            title="字体大小"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="4 7 4 4 20 4 20 7" />
+              <line x1="9" y1="20" x2="15" y2="20" />
+              <line x1="12" y1="4" x2="12" y2="20" />
             </svg>
           </button>
         </div>

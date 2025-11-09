@@ -23,6 +23,7 @@ interface PushpinProps {
     author: string
     url: string
   } // B站视频信息
+  fontSize?: number // 标签字体大小
 }
 
 /**
@@ -46,7 +47,8 @@ function Pushpin({
   mapHeight = 2,
   labelOffset: _labelOffset = { x: 0, y: 0 },
   onLabelDrag: _onLabelDrag,
-  videoInfo
+  videoInfo,
+  fontSize = 20
 }: PushpinProps) {
   const [hovered, setHovered] = useState(false)
 
@@ -145,7 +147,7 @@ function Pushpin({
               color: 'white',
               padding: '4px 10px',
               borderRadius: '5px',
-              fontSize: '20px',
+              fontSize: `${fontSize}px`,
               fontWeight: '500',
               whiteSpace: 'nowrap',
               marginTop: '8px',
