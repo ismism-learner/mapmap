@@ -1,23 +1,22 @@
 import { useState, useEffect, useRef } from 'react'
-import { City, searchCities } from '../utils/cityUtils'
+import { smartSearch, SearchResult } from '../utils/unifiedSearchUtils'
 import { CloseIcon } from './Icons'
 import './SearchBar.css'
 
 interface SearchBarProps {
-  cities: City[]
-  onSelectCity: (city: City) => void
+  cities: any[] // 兼容旧接口，但不再使用
+  onSelectCity: (city: any) => void
 }
 
 /**
- * 城市搜索栏组件
- * - 实时搜索城市
- * - 显示搜索结果
- * - 支持键盘导航
- * - 支持中文搜索
+ * 统一搜索栏组件
+ * - 智能三层搜索（国家/省州/城市）
+ * - 通过逗号数量自动判断搜索层级
+ * - 支持中文和拼音搜索
  */
 function SearchBar({ cities, onSelectCity }: SearchBarProps) {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<City[]>([])
+  const [results, setResults] = useState<SearchResult[]>([])
   const [showResults, setShowResults] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const searchRef = useRef<HTMLDivElement>(null)
@@ -29,10 +28,10 @@ function SearchBar({ cities, onSelectCity }: SearchBarProps) {
       return
     }
 
-    // 异步搜索（支持中文翻译）
+    // 智能搜索（根据逗号数量判断层级）
     let isCancelled = false
 
-    searchCities(cities, query).then(searchResults => {
+    smartSearch(query).then(searchResults => {
       if (!isCancelled) {
         setResults(searchResults)
         setShowResults(true)
@@ -43,7 +42,7 @@ function SearchBar({ cities, onSelectCity }: SearchBarProps) {
     return () => {
       isCancelled = true
     }
-  }, [query, cities])
+  }, [query])
 
   // 点击外部关闭搜索结果
   useEffect(() => {
@@ -59,10 +58,26 @@ function SearchBar({ cities, onSelectCity }: SearchBarProps) {
     }
   }, [])
 
-  const handleSelectCity = (city: City) => {
+  const handleSelectCity = (result: SearchResult) => {
     setQuery('')
     setShowResults(false)
-    onSelectCity(city)
+
+    // 转换为旧的City格式，保持兼容性
+    const cityData = {
+      id: parseInt(result.id.split('-')[1]) || 0,
+      name: result.name,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      state_name: result.displayPath.split(', ')[0] || '',
+      country_name: result.displayPath.split(', ').pop() || '',
+      state_id: 0,
+      state_code: '',
+      country_id: 0,
+      country_code: '',
+      wikiDataId: ''
+    }
+
+    onSelectCity(cityData)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -122,17 +137,15 @@ function SearchBar({ cities, onSelectCity }: SearchBarProps) {
 
       {showResults && results.length > 0 && (
         <div className="search-results">
-          {results.map((city, index) => (
+          {results.map((result, index) => (
             <div
-              key={city.id}
+              key={result.id}
               className={`search-result-item ${index === selectedIndex ? 'selected' : ''}`}
-              onClick={() => handleSelectCity(city)}
+              onClick={() => handleSelectCity(result)}
               onMouseEnter={() => setSelectedIndex(index)}
             >
-              <div className="result-city-name">{city.name}</div>
-              <div className="result-location">
-                {city.isCountry ? '国家' : `${city.state_name}, ${city.country_name}`}
-              </div>
+              <div className="result-city-name">{result.name}</div>
+              <div className="result-location">{result.displayPath}</div>
             </div>
           ))}
         </div>
@@ -140,7 +153,7 @@ function SearchBar({ cities, onSelectCity }: SearchBarProps) {
 
       {showResults && query && results.length === 0 && (
         <div className="search-results">
-          <div className="no-results">未找到匹配的城市</div>
+          <div className="no-results">未找到匹配结果</div>
         </div>
       )}
     </div>
