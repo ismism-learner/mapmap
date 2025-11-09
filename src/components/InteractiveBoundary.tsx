@@ -145,15 +145,17 @@ function InteractiveBoundary({
     loadBoundaries()
   }, [shpPath, visible, radius, isFlat, mapWidth, mapHeight])
 
-  const handleClick = (feature: BoundaryFeature) => {
+  const handleClick = (e: any, feature: BoundaryFeature) => {
     // 立即清除悬停高亮状态
     setHoveredId(null)
 
-    // 只在上色模式下处理点击
+    // 只在上色模式下处理点击并阻止传播
     if (paintMode && onCountryPaint) {
+      e.stopPropagation()
       onCountryPaint(feature.id, selectedColor)
       console.log(`🎨 上色: ${feature.name} -> ${selectedColor}`)
     }
+    // 非上色模式下不阻止传播，让事件传递到地球
   }
 
   // 在顶层预计算所有几何体，避免在循环中使用hooks
@@ -202,14 +204,8 @@ function InteractiveBoundary({
                   // 平面模式填充
                   <mesh
                     position={[0, 0, 0.0005]}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleClick(feature)
-                    }}
-                    onDoubleClick={(e) => {
-                      e.stopPropagation()
-                      handleClick(feature)
-                    }}
+                    onClick={(e) => handleClick(e, feature)}
+                    onDoubleClick={(e) => handleClick(e, feature)}
                   >
                     <shapeGeometry
                       args={[
@@ -272,14 +268,8 @@ function InteractiveBoundary({
                         <mesh
                           key={`fill-${feature.id}-${idx}`}
                           geometry={geometry}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleClick(feature)
-                          }}
-                          onDoubleClick={(e) => {
-                            e.stopPropagation()
-                            handleClick(feature)
-                          }}
+                          onClick={(e) => handleClick(e, feature)}
+                          onDoubleClick={(e) => handleClick(e, feature)}
                         >
                           <meshBasicMaterial
                             color={fillColor}
@@ -315,28 +305,16 @@ function InteractiveBoundary({
                   e.stopPropagation()
                   setHoveredId(null)
                 }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleClick(feature)
-                }}
-                onDoubleClick={(e) => {
-                  e.stopPropagation()
-                  handleClick(feature)
-                }}
+                onClick={(e) => handleClick(e, feature)}
+                onDoubleClick={(e) => handleClick(e, feature)}
               />
             ))}
 
             {/* 平面模式：简化的点击检测区域 */}
             {!fillColor && isFlat && feature.lines.length > 0 && feature.lines[0].length > 2 && (
               <mesh
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleClick(feature)
-                }}
-                onDoubleClick={(e) => {
-                  e.stopPropagation()
-                  handleClick(feature)
-                }}
+                onClick={(e) => handleClick(e, feature)}
+                onDoubleClick={(e) => handleClick(e, feature)}
                 onPointerOver={(e) => {
                   e.stopPropagation()
                   setHoveredId(feature.id)
@@ -366,14 +344,8 @@ function InteractiveBoundary({
                 <mesh
                   key={`click-area-${feature.id}-${idx}`}
                   geometry={geometry}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleClick(feature)
-                  }}
-                  onDoubleClick={(e) => {
-                    e.stopPropagation()
-                    handleClick(feature)
-                  }}
+                  onClick={(e) => handleClick(e, feature)}
+                  onDoubleClick={(e) => handleClick(e, feature)}
                   onPointerOver={(e) => {
                     e.stopPropagation()
                     setHoveredId(feature.id)
