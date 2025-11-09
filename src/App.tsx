@@ -8,6 +8,8 @@ import EditableInfoPanel from './components/EditableInfoPanel'
 import ModeToggle from './components/ModeToggle'
 import UnfoldTransition from './components/UnfoldTransition'
 import EventInput from './components/EventInput'
+import PerformanceMonitor from './components/PerformanceMonitor'
+import MarkerStressTest from './components/MarkerStressTest'
 import { City, loadCities } from './utils/cityUtils'
 import { TextureConfig, loadTextures } from './types/texture'
 import {
@@ -335,6 +337,14 @@ function App() {
     console.log(`✅ 成功创建 ${allNewMarkers.length} 个标记和 ${newConnections.length} 个连接`)
   }
 
+  // 处理生成测试标记
+  const handleGenerateTestMarkers = (markers: CustomMarker[]) => {
+    setCustomMarkers(markers)
+    setConnections([]) // 清除连接线
+    setLastMarker(null)
+    setSelectedMarker(null)
+  }
+
   // 获取当前选中的底图路径
   const currentTexturePath = textures.find(t => t.id === selectedTexture)?.path
 
@@ -355,7 +365,9 @@ function App() {
           realisticLighting={realisticLighting}
           texturePath={currentTexturePath}
           isFlatMode={isFlatMode}
+          useOptimizedRendering={true}
         />
+        <PerformanceMonitor />
       </Canvas>
 
       {/* 搜索栏 - 支持中文搜索 */}
@@ -404,6 +416,9 @@ function App() {
 
       {/* 批量事件创建 */}
       <EventInput onCreateEvents={handleCreateEvents} />
+
+      {/* 压力测试工具 */}
+      <MarkerStressTest onGenerateMarkers={handleGenerateTestMarkers} />
 
       {/* 球形展开/收缩过渡效果 */}
       <UnfoldTransition
