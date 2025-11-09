@@ -14,8 +14,6 @@ interface InteractiveBoundaryProps {
   isFlat?: boolean
   mapWidth?: number
   mapHeight?: number
-  onCountryClick?: (countryInfo: { id: number; name: string; latitude: number; longitude: number }) => void
-  selectedCountries?: number[]
   paintMode?: boolean
   selectedColor?: string
   countryColors?: Map<number, string>
@@ -45,8 +43,6 @@ function InteractiveBoundary({
   isFlat = false,
   mapWidth = 4,
   mapHeight = 2,
-  onCountryClick,
-  selectedCountries = [],
   paintMode = false,
   selectedColor = '#FF6B6B',
   countryColors = new Map(),
@@ -150,26 +146,13 @@ function InteractiveBoundary({
   }, [shpPath, visible, radius, isFlat, mapWidth, mapHeight])
 
   const handleClick = (feature: BoundaryFeature) => {
-    console.log(`🖱️ 点击国家: ${feature.name}`, feature.center)
-
     // 立即清除悬停高亮状态
     setHoveredId(null)
 
-    // 如果在上色模式，执行上色操作
+    // 只在上色模式下处理点击
     if (paintMode && onCountryPaint) {
       onCountryPaint(feature.id, selectedColor)
       console.log(`🎨 上色: ${feature.name} -> ${selectedColor}`)
-      return
-    }
-
-    // 否则执行创建图钉操作
-    if (onCountryClick) {
-      onCountryClick({
-        id: feature.id,
-        name: feature.name || `区域 ${feature.id}`,
-        latitude: feature.center.latitude,
-        longitude: feature.center.longitude
-      })
     }
   }
 
@@ -206,7 +189,6 @@ function InteractiveBoundary({
   return (
     <group ref={groupRef} name="interactive-boundary-layer">
       {features.map((feature) => {
-        const isSelected = selectedCountries.includes(feature.id)
         const isHovered = hoveredId === feature.id
         const fillColor = countryColors.get(feature.id)
         const clickGeometries = geometriesCache.get(feature.id)
@@ -321,10 +303,10 @@ function InteractiveBoundary({
               <Line
                 key={`line-${feature.id}-${lineIdx}`}
                 points={points}
-                color={isSelected ? '#00FFFF' : (isHovered ? '#FFFFFF' : color)}
-                lineWidth={isSelected ? lineWidth * 2.5 : (isHovered ? lineWidth * 1.8 : lineWidth)}
+                color={isHovered ? '#FFFFFF' : color}
+                lineWidth={isHovered ? lineWidth * 1.8 : lineWidth}
                 transparent
-                opacity={isSelected ? 1 : (isHovered ? 0.9 : 0.7)}
+                opacity={isHovered ? 0.9 : 0.7}
                 onPointerOver={(e) => {
                   e.stopPropagation()
                   setHoveredId(feature.id)
