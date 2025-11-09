@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import * as THREE from 'three'
 import { Line } from '@react-three/drei'
 import { loadShapefile, lonLatToVector3, lonLatToFlatPosition, vector3ToLonLat } from '../utils/geoUtils'
+import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry.js'
 
 interface InteractiveBoundaryProps {
   shpPath: string
@@ -281,6 +282,14 @@ function InteractiveBoundary({
                   e.stopPropagation()
                   handleClick(feature)
                 }}
+                onPointerOver={(e) => {
+                  e.stopPropagation()
+                  setHoveredId(feature.id)
+                }}
+                onPointerOut={(e) => {
+                  e.stopPropagation()
+                  setHoveredId(null)
+                }}
                 position={[0, 0, 0.001]}
                 visible={false}
               >
@@ -293,6 +302,41 @@ function InteractiveBoundary({
                 />
               </mesh>
             )}
+
+            {/* 球形模式：不可见的点击检测区域 */}
+            {!fillColor && !isFlat && feature.lines.map((line, idx) => {
+              if (line.length < 3) return null
+
+              try {
+                // 使用ConvexGeometry创建凸包用于点击检测
+                const convexGeometry = new ConvexGeometry(line)
+
+                return (
+                  <mesh
+                    key={`click-area-${feature.id}-${idx}`}
+                    geometry={convexGeometry}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleClick(feature)
+                    }}
+                    onPointerOver={(e) => {
+                      e.stopPropagation()
+                      setHoveredId(feature.id)
+                    }}
+                    onPointerOut={(e) => {
+                      e.stopPropagation()
+                      setHoveredId(null)
+                    }}
+                    visible={false}
+                  >
+                    <meshBasicMaterial side={THREE.DoubleSide} />
+                  </mesh>
+                )
+              } catch (error) {
+                console.warn(`Failed to create click geometry for feature ${feature.id}:`, error)
+                return null
+              }
+            })}
           </group>
         )
       })}
