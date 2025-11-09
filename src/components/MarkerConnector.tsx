@@ -226,7 +226,7 @@ function MarkerConnector({
           <div
             style={{
               color: color,
-              fontSize: '36px',
+              fontSize: '25px',
               fontWeight: 'bold',
               textShadow: '0 0 6px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 255, 255, 0.8)',
               userSelect: 'none',
@@ -338,9 +338,9 @@ function MarkerConnector({
             style={{
               background: hovered && connection.eventInfo ? 'rgba(0, 0, 0, 0.92)' : 'rgba(0, 0, 0, 0.85)',
               color: 'white',
-              padding: hovered && connection.eventInfo ? '10px 14px' : '3px 8px',
-              borderRadius: hovered && connection.eventInfo ? '8px' : '4px',
-              fontSize: '12px',
+              padding: hovered && connection.eventInfo ? '10px 14px' : '4px 10px',
+              borderRadius: hovered && connection.eventInfo ? '8px' : '5px',
+              fontSize: '20px',
               fontWeight: '500',
               whiteSpace: 'nowrap',
               border: hovered && connection.eventInfo ? '2px solid #00ffff' : '1px solid rgba(0, 255, 255, 0.3)',
