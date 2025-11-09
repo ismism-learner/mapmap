@@ -60,7 +60,7 @@ pointer-events: ${window.getComputedStyle(target).pointerEvents}
         }}
         onClick={() => setVisible(true)}
       >
-        🔍 Shift+D: 点击调试
+        Shift+D: 点击调试
       </div>
     )
   }
@@ -96,7 +96,7 @@ pointer-events: ${window.getComputedStyle(target).pointerEvents}
           borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
         }}
       >
-        <strong>🔍 点击事件调试器</strong>
+        <strong>点击事件调试器</strong>
         <button
           onClick={() => setVisible(false)}
           style={{
@@ -113,7 +113,7 @@ pointer-events: ${window.getComputedStyle(target).pointerEvents}
       </div>
 
       <div style={{ marginBottom: '12px', color: '#fbbf24' }}>
-        💡 点击任何地方查看事件信息
+        点击任何地方查看事件信息
       </div>
 
       <div>
