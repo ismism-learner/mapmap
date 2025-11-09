@@ -100,6 +100,7 @@ function Pushpin({
           transform: hovered ? 'scale(1.2)' : 'scale(1)',
           transition: 'transform 0.2s',
           pointerEvents: 'auto',
+          position: 'relative', // 添加相对定位，方便视频卡片绝对定位
         }}
       >
         {/* SVG图钉 */}
@@ -134,89 +135,8 @@ function Pushpin({
           />
         </svg>
 
-        {/* 视频封面 - 长期显示，可点击跳转 */}
-        {videoInfo && (
-          <a
-            href={videoInfo.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onMouseDown={(e) => {
-              // 如果点击封面，打开链接而不是拖动
-              e.stopPropagation()
-            }}
-            style={{
-              marginTop: '8px',
-              pointerEvents: 'auto',
-              cursor: 'pointer',
-              textDecoration: 'none',
-              display: 'block',
-              transition: 'transform 0.2s',
-            }}
-          >
-            <div
-              style={{
-                background: 'rgba(0, 0, 0, 0.9)',
-                borderRadius: '8px',
-                overflow: 'hidden',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-                border: '2px solid rgba(255,255,255,0.2)',
-                maxWidth: '200px',
-                transition: 'transform 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.05)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)'
-              }}
-            >
-              {/* 封面图 */}
-              <img
-                src={videoInfo.cover}
-                alt={videoInfo.title}
-                style={{
-                  width: '100%',
-                  height: 'auto',
-                  display: 'block',
-                }}
-              />
-              {/* 视频信息 */}
-              <div
-                style={{
-                  padding: '8px',
-                  color: 'white',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    marginBottom: '4px',
-                    lineHeight: '1.3',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                  }}
-                >
-                  {videoInfo.title}
-                </div>
-                <div
-                  style={{
-                    fontSize: '10px',
-                    color: 'rgba(255,255,255,0.7)',
-                  }}
-                >
-                  UP主: {videoInfo.author}
-                </div>
-              </div>
-            </div>
-          </a>
-        )}
-
-        {/* 标签 - 当没有视频时，长期显示 */}
-        {!videoInfo && label && (
+        {/* 标签 - 永久显示（无论是否有视频） */}
+        {label && (
           <div
             style={{
               background: 'rgba(0, 0, 0, 0.85)',
@@ -235,6 +155,108 @@ function Pushpin({
           >
             {label}
           </div>
+        )}
+
+        {/* 视频封面 - 仅悬停时显示，位于右上方 */}
+        {videoInfo && hovered && (
+          <a
+            href={videoInfo.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onMouseEnter={() => setHovered(true)} // 保持悬停状态
+            onMouseLeave={() => setHovered(false)} // 移开时取消悬停
+            onMouseDown={(e) => {
+              // 如果点击封面，打开链接而不是拖动
+              e.stopPropagation()
+            }}
+            style={{
+              position: 'absolute',
+              left: '100%',
+              top: '0',
+              marginLeft: '16px',
+              pointerEvents: 'auto',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              display: 'block',
+              zIndex: 1000,
+            }}
+          >
+            <div
+              style={{
+                background: 'rgba(0, 0, 0, 0.95)',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                border: '2px solid rgba(0, 255, 255, 0.5)',
+                width: '240px',
+                transition: 'transform 0.2s, border-color 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.02)'
+                e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.8)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)'
+                e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.5)'
+              }}
+            >
+              {/* 封面图 */}
+              <img
+                src={videoInfo.cover}
+                alt={videoInfo.title}
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  display: 'block',
+                }}
+              />
+
+              {/* 视频信息 */}
+              <div
+                style={{
+                  padding: '10px',
+                }}
+              >
+                <div
+                  style={{
+                    color: 'white',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    marginBottom: '6px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  {videoInfo.title}
+                </div>
+                <div
+                  style={{
+                    color: 'rgba(255,255,255,0.7)',
+                    fontSize: '11px',
+                    marginBottom: '8px',
+                  }}
+                >
+                  UP主: {videoInfo.author}
+                </div>
+                <div
+                  style={{
+                    color: '#00ffff',
+                    fontSize: '10px',
+                    textAlign: 'center',
+                    padding: '4px',
+                    background: 'rgba(0, 255, 255, 0.1)',
+                    borderRadius: '4px',
+                  }}
+                >
+                  点击查看视频 →
+                </div>
+              </div>
+            </div>
+          </a>
         )}
       </div>
     </Html>
