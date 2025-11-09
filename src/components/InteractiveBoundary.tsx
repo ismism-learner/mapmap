@@ -196,26 +196,14 @@ function InteractiveBoundary({
               />
             ))}
 
-            {/* 发光效果层（悬停时显示） */}
-            {isHovered && feature.lines.map((points, lineIdx) => (
-              <Line
-                key={`glow-${feature.id}-${lineIdx}`}
-                points={points}
-                color="#FFFFFF"
-                lineWidth={lineWidth * 4}
-                transparent
-                opacity={feature.hoverIntensity * 0.25}
-              />
-            ))}
-
-            {/* 平面模式：填充区域用于鼠标检测和内发光 */}
+            {/* 平面模式：填充区域用于鼠标检测（完全透明） */}
             {isFlat && feature.lines.length > 0 && feature.lines[0].length > 2 && (
               <mesh
                 onClick={(e) => {
                   e.stopPropagation()
                   handleClick(feature.id, feature.name)
                 }}
-                position={[0, 0, 0.001]} // 略微抬高避免 z-fighting
+                position={[0, 0, 0.001]}
               >
                 <shapeGeometry
                   args={[
@@ -225,15 +213,14 @@ function InteractiveBoundary({
                   ]}
                 />
                 <meshBasicMaterial
-                  color={color}
                   transparent
-                  opacity={0.12 + feature.hoverIntensity * 0.25}
+                  opacity={0}
                   side={THREE.DoubleSide}
                 />
               </mesh>
             )}
 
-            {/* 球形模式：使用管道几何体创建可点击的边界 */}
+            {/* 球形模式：使用管道几何体创建可点击的边界（完全透明） */}
             {!isFlat && feature.lines.length > 0 && feature.lines.map((points, lineIdx) => {
               if (points.length < 2) return null
 
@@ -254,12 +241,9 @@ function InteractiveBoundary({
                       false
                     ]}
                   />
-                  <meshStandardMaterial
-                    color={color}
+                  <meshBasicMaterial
                     transparent
-                    opacity={0.12 + feature.hoverIntensity * 0.3}
-                    emissive={color}
-                    emissiveIntensity={feature.hoverIntensity}
+                    opacity={0}
                   />
                 </mesh>
               )
