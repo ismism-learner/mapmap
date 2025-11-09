@@ -43,6 +43,9 @@ function App() {
   const [manualConnectMode, setManualConnectMode] = useState(false) // 手动连接模式
   const [firstMarkerForConnect, setFirstMarkerForConnect] = useState<CustomMarker | null>(null)
 
+  // 光照模式
+  const [realisticLighting, setRealisticLighting] = useState(false) // 真实光照模式（默认关闭）
+
   const [flyToCity, setFlyToCity] = useState<{ lon: number; lat: number } | null>(null)
 
   // 加载城市数据
@@ -224,6 +227,7 @@ function App() {
           flyToCity={flyToCity}
           manualConnectMode={manualConnectMode}
           selectedMarkerForConnect={firstMarkerForConnect}
+          realisticLighting={realisticLighting}
         />
       </Canvas>
 
@@ -237,7 +241,12 @@ function App() {
       </div>
 
       {/* 图层控制面板 */}
-      <LayerControl layers={layers} onLayerToggle={handleLayerToggle} />
+      <LayerControl
+        layers={layers}
+        onLayerToggle={handleLayerToggle}
+        realisticLighting={realisticLighting}
+        onLightingToggle={() => setRealisticLighting(!realisticLighting)}
+      />
 
       {/* 城市信息卡片 */}
       <InfoCard city={selectedCity} onClose={() => setSelectedCity(null)} />

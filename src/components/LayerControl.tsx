@@ -12,14 +12,17 @@ export interface LayerConfig {
 interface LayerControlProps {
   layers: LayerConfig[]
   onLayerToggle: (layerId: string) => void
+  realisticLighting?: boolean
+  onLightingToggle?: () => void
 }
 
 /**
  * 图层控制面板
  * - 显示所有可用的边界线图层
  * - 允许用户切换图层的显示/隐藏
+ * - 控制光照模式
  */
-function LayerControl({ layers, onLayerToggle }: LayerControlProps) {
+function LayerControl({ layers, onLayerToggle, realisticLighting = false, onLightingToggle }: LayerControlProps) {
   const [isOpen, setIsOpen] = useState(true)
 
   return (
@@ -47,6 +50,24 @@ function LayerControl({ layers, onLayerToggle }: LayerControlProps) {
               </label>
             </div>
           ))}
+
+          {/* 光照模式切换 */}
+          {onLightingToggle && (
+            <>
+              <div className="layer-divider" />
+              <div className="layer-item">
+                <label className="layer-label">
+                  <input
+                    type="checkbox"
+                    checked={realisticLighting}
+                    onChange={onLightingToggle}
+                  />
+                  <span className="layer-icon">💡</span>
+                  <span className="layer-name">真实光照</span>
+                </label>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

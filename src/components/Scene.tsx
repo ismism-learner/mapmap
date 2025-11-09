@@ -24,6 +24,7 @@ interface SceneProps {
   flyToCity: { lon: number; lat: number } | null
   manualConnectMode?: boolean
   selectedMarkerForConnect?: CustomMarker | null
+  realisticLighting?: boolean
 }
 
 function Scene({
@@ -36,7 +37,8 @@ function Scene({
   onDoubleClick,
   flyToCity,
   manualConnectMode = false,
-  selectedMarkerForConnect = null
+  selectedMarkerForConnect = null,
+  realisticLighting = false
 }: SceneProps) {
   const { flyTo } = useCameraControls()
   const globeRef = useRef<Mesh>(null)
@@ -61,11 +63,24 @@ function Scene({
 
   return (
     <>
-      {/* 环境光 */}
-      <ambientLight intensity={0.5} />
-
-      {/* 定向光 */}
-      <directionalLight position={[5, 3, 5]} intensity={1} />
+      {/* 光照系统 */}
+      {realisticLighting ? (
+        <>
+          {/* 真实光照模式：模拟太阳光 */}
+          <ambientLight intensity={0.3} />
+          <directionalLight position={[5, 3, 5]} intensity={1.2} />
+        </>
+      ) : (
+        <>
+          {/* 均匀光照模式：从多个方向均匀照射 */}
+          <ambientLight intensity={0.8} />
+          <directionalLight position={[0, 5, 0]} intensity={0.4} />
+          <directionalLight position={[5, 0, 0]} intensity={0.2} />
+          <directionalLight position={[-5, 0, 0]} intensity={0.2} />
+          <directionalLight position={[0, 0, 5]} intensity={0.2} />
+          <directionalLight position={[0, 0, -5]} intensity={0.2} />
+        </>
+      )}
 
       {/* 地球组件 - 添加双击事件 */}
       <mesh ref={globeRef} onDoubleClick={handleGlobeDoubleClick}>
