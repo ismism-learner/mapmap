@@ -224,6 +224,10 @@ function InteractiveBoundary({
                       e.stopPropagation()
                       handleClick(feature)
                     }}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation()
+                      handleClick(feature)
+                    }}
                   >
                     <shapeGeometry
                       args={[
@@ -290,6 +294,10 @@ function InteractiveBoundary({
                             e.stopPropagation()
                             handleClick(feature)
                           }}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation()
+                            handleClick(feature)
+                          }}
                         >
                           <meshBasicMaterial
                             color={fillColor}
@@ -329,6 +337,10 @@ function InteractiveBoundary({
                   e.stopPropagation()
                   handleClick(feature)
                 }}
+                onDoubleClick={(e) => {
+                  e.stopPropagation()
+                  handleClick(feature)
+                }}
               />
             ))}
 
@@ -336,6 +348,10 @@ function InteractiveBoundary({
             {!fillColor && isFlat && feature.lines.length > 0 && feature.lines[0].length > 2 && (
               <mesh
                 onClick={(e) => {
+                  e.stopPropagation()
+                  handleClick(feature)
+                }}
+                onDoubleClick={(e) => {
                   e.stopPropagation()
                   handleClick(feature)
                 }}
@@ -369,6 +385,10 @@ function InteractiveBoundary({
                   key={`click-area-${feature.id}-${idx}`}
                   geometry={geometry}
                   onClick={(e) => {
+                    e.stopPropagation()
+                    handleClick(feature)
+                  }}
+                  onDoubleClick={(e) => {
                     e.stopPropagation()
                     handleClick(feature)
                   }}

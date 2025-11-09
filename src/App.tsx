@@ -243,10 +243,7 @@ function App() {
 
       setCustomMarkers(prev => [...prev, newMarker])
 
-      // 更新选中的国家列表（永久保留，不删除）
-      setSelectedCountries(prev => [...prev, countryInfo.id])
-
-      console.log(`📍 在国家 ${countryInfo.name} 创建永久图钉`)
+      console.log(`📍 在国家 ${countryInfo.name} 创建图钉`)
 
       // 添加到映射
       const newMap = new Map(prevCountryMarkers)
