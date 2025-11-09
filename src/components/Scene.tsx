@@ -161,6 +161,7 @@ function Scene({
             toMarker={toMarker}
             color="#00ffff"
             lineWidth={2}
+            isFlat={isFlatMode}
           />
         )
       })}
