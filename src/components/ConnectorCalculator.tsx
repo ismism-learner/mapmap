@@ -15,10 +15,10 @@ interface ConnectorCalculatorProps {
 }
 
 /**
- * 连接线坐标计算器（性能优化版）
- * - 每3帧更新一次，减少计算频率
- * - 缓存DOM查询结果
- * - 坐标差异检测，只在变化超过阈值时更新
+ * 连接线坐标计算器（同步优化版）
+ * - 每帧都计算坐标，确保与地球旋转完全同步
+ * - 智能差异检测，仅在坐标变化时更新状态
+ * - DOM查询缓存，减少性能开销
  */
 function ConnectorCalculator({
   events,
@@ -29,25 +29,23 @@ function ConnectorCalculator({
   mapHeight = 2,
 }: ConnectorCalculatorProps) {
   const { camera, size } = useThree()
-  const frameCountRef = useRef(0)
   const lastLinesRef = useRef<ConnectorLine[]>([])
   const anchorCacheRef = useRef<Map<string, HTMLElement>>(new Map())
+  const cleanupCounterRef = useRef(0)
 
   useFrame(() => {
-    // 帧节流：每3帧更新一次
-    frameCountRef.current++
-    if (frameCountRef.current % 3 !== 0) {
-      return
+    // 每60帧清理一次无效缓存（约1秒一次）
+    cleanupCounterRef.current++
+    if (cleanupCounterRef.current >= 60) {
+      cleanupCounterRef.current = 0
+      const currentEventIds = new Set(events.map(e => e.id))
+      const cachedIds = Array.from(anchorCacheRef.current.keys())
+      cachedIds.forEach(id => {
+        if (!currentEventIds.has(id)) {
+          anchorCacheRef.current.delete(id)
+        }
+      })
     }
-
-    // 清理无效缓存（每次更新时顺带执行）
-    const currentEventIds = new Set(events.map(e => e.id))
-    const cachedIds = Array.from(anchorCacheRef.current.keys())
-    cachedIds.forEach(id => {
-      if (!currentEventIds.has(id)) {
-        anchorCacheRef.current.delete(id)
-      }
-    })
 
     // 如果没有事件，清空连接线
     if (events.length === 0) {
