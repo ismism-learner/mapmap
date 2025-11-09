@@ -35,6 +35,7 @@ function EditableInfoPanel({
   const [images, setImages] = useState<MarkerImage[]>(marker.info.images)
   const [videoInfo, setVideoInfo] = useState(marker.info.videoInfo)
   const [isLoadingVideo, setIsLoadingVideo] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
   // 添加B站视频
   const handleAddBilibiliVideo = async () => {
@@ -80,7 +81,76 @@ function EditableInfoPanel({
     setLinks(links.filter(link => link.id !== id))
   }
 
-  // 添加图片
+  // 将文件转换为base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // 处理图片文件
+  const handleImageFiles = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files)
+    const imageFiles = fileArray.filter(file => file.type.startsWith('image/'))
+
+    if (imageFiles.length === 0) {
+      alert('请上传图片文件')
+      return
+    }
+
+    for (const file of imageFiles) {
+      try {
+        const base64 = await fileToBase64(file)
+        setImages(prev => [...prev, {
+          id: generateId(),
+          url: base64,
+          alt: file.name
+        }])
+      } catch (error) {
+        console.error('图片转换失败:', error)
+        alert(`图片 ${file.name} 上传失败`)
+      }
+    }
+  }
+
+  // 拖拽进入
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  // 拖拽离开
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  // 拖拽放下
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const files = e.dataTransfer.files
+    if (files.length > 0) {
+      await handleImageFiles(files)
+    }
+  }
+
+  // 点击选择文件
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      await handleImageFiles(files)
+    }
+  }
+
+  // 添加图片（保留URL输入方式）
   const handleAddImage = () => {
     const url = prompt('图片地址 (URL):')
     const alt = prompt('图片描述:') || '图片'
@@ -244,6 +314,42 @@ function EditableInfoPanel({
           </div>
         )}
 
+        {/* 编辑模式下的拖拽上传区域 */}
+        {isEditing && (
+          <div
+            className={`image-drop-zone ${isDragging ? 'dragging' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            style={{
+              border: isDragging ? '2px dashed #00ffff' : '2px dashed rgba(0, 255, 255, 0.3)',
+              borderRadius: '8px',
+              padding: '20px',
+              textAlign: 'center',
+              backgroundColor: isDragging ? 'rgba(0, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.2)',
+              marginBottom: '12px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onClick={() => {
+              const input = document.createElement('input')
+              input.type = 'file'
+              input.accept = 'image/*'
+              input.multiple = true
+              input.onchange = handleFileSelect as any
+              input.click()
+            }}
+          >
+            <div style={{ color: isDragging ? '#00ffff' : '#888', fontSize: '14px' }}>
+              {isDragging ? (
+                <span>📷 松开鼠标上传图片</span>
+              ) : (
+                <span>📷 拖拽图片到此处或点击选择文件</span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* 编辑模式下的添加按钮 */}
         {isEditing && (
           <div className="add-buttons">
@@ -264,7 +370,7 @@ function EditableInfoPanel({
               )}
             </button>
             <button className="add-btn" onClick={handleAddImage} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-              <PlusIcon size={14} /> 添加图片
+              <PlusIcon size={14} /> 添加图片URL
             </button>
             <button className="add-btn" onClick={handleAddLink} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
               <PlusIcon size={14} /> 添加链接
