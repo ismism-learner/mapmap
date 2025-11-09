@@ -111,10 +111,10 @@ function Scene({
       clearTimeout(moveTimeoutRef.current)
     }
 
-    // 100ms后如果没有新的移动，则认为已停止（缩短延迟）
+    // 30ms后如果没有新的移动，则认为已停止（快速响应，避免点击创建图钉时延迟显示）
     moveTimeoutRef.current = setTimeout(() => {
       setIsCameraMoving(false)
-    }, 100)
+    }, 30)
   }, [isCameraMoving, onConnectorLinesUpdate])
 
   // 当 flyToCity 改变时，执行相机动画
@@ -309,7 +309,7 @@ function Scene({
           zoomSpeed={0.6}
           rotateSpeed={0.4}
           enableDamping={true}
-          dampingFactor={0.05}
+          dampingFactor={0.01}
           onStart={handleCameraStart}
           onChange={handleCameraChange}
         />
