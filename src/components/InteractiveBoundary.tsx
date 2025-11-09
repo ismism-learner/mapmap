@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import * as THREE from 'three'
 import { Line } from '@react-three/drei'
-import { loadShapefile, lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
+import { loadShapefile, lonLatToVector3, lonLatToFlatPosition, vector3ToLonLat } from '../utils/geoUtils'
 
 interface InteractiveBoundaryProps {
   shpPath: string
@@ -12,12 +12,15 @@ interface InteractiveBoundaryProps {
   isFlat?: boolean
   mapWidth?: number
   mapHeight?: number
+  onCountryClick?: (countryInfo: { id: number; name: string; latitude: number; longitude: number }) => void
+  selectedCountries?: number[]
 }
 
 interface BoundaryFeature {
   id: number
   name?: string
   lines: THREE.Vector3[][]
+  center: { latitude: number; longitude: number }
 }
 
 /**
@@ -25,6 +28,7 @@ interface BoundaryFeature {
  * - 支持鼠标悬停高亮
  * - 内部发光效果（Inner Glow）
  * - 柔和的过渡动画
+ * - 点击国家创建图钉并连接
  */
 function InteractiveBoundary({
   shpPath,
@@ -34,12 +38,34 @@ function InteractiveBoundary({
   radius = 1.005,
   isFlat = false,
   mapWidth = 4,
-  mapHeight = 2
+  mapHeight = 2,
+  onCountryClick,
+  selectedCountries = []
 }: InteractiveBoundaryProps) {
   const [features, setFeatures] = useState<BoundaryFeature[]>([])
   const [loading, setLoading] = useState(true)
   const [hoveredId, setHoveredId] = useState<number | null>(null)
   const groupRef = useRef<THREE.Group>(null)
+
+  // 计算多边形中心点（经纬度）
+  const calculateCenter = (lines: THREE.Vector3[][]): { latitude: number; longitude: number } => {
+    if (lines.length === 0 || lines[0].length === 0) {
+      return { latitude: 0, longitude: 0 }
+    }
+
+    // 获取所有点
+    const allPoints: THREE.Vector3[] = []
+    lines.forEach(line => allPoints.push(...line))
+
+    // 计算平均位置
+    const avgPosition = new THREE.Vector3()
+    allPoints.forEach(point => avgPosition.add(point))
+    avgPosition.divideScalar(allPoints.length)
+
+    // 转换为经纬度
+    const { latitude, longitude } = vector3ToLonLat(avgPosition.x, avgPosition.y, avgPosition.z)
+    return { latitude, longitude }
+  }
 
   useEffect(() => {
     if (!visible) {
@@ -91,10 +117,12 @@ function InteractiveBoundary({
           }
 
           if (lines.length > 0) {
+            const center = calculateCenter(lines)
             featuresList.push({
               id: idx,
               name: feature.properties?.name || feature.properties?.NAME || `区域 ${idx}`,
-              lines
+              lines,
+              center
             })
           }
         })
@@ -111,15 +139,16 @@ function InteractiveBoundary({
     loadBoundaries()
   }, [shpPath, visible, radius, isFlat, mapWidth, mapHeight])
 
-  const handleClick = (id: number, name?: string) => {
-    // 如果点击的是已选中的区域，则取消选中
-    if (hoveredId === id) {
-      setHoveredId(null)
-      console.log(`🖱️ 取消选择: ${name}`)
-    } else {
-      // 否则选中新区域，并取消之前的选择
-      setHoveredId(id)
-      console.log(`🖱️ 点击选中: ${name}`)
+  const handleClick = (feature: BoundaryFeature) => {
+    console.log(`🖱️ 点击国家: ${feature.name}`, feature.center)
+
+    if (onCountryClick) {
+      onCountryClick({
+        id: feature.id,
+        name: feature.name || `区域 ${feature.id}`,
+        latitude: feature.center.latitude,
+        longitude: feature.center.longitude
+      })
     }
   }
 
@@ -130,6 +159,7 @@ function InteractiveBoundary({
   return (
     <group ref={groupRef} name="interactive-boundary-layer">
       {features.map((feature) => {
+        const isSelected = selectedCountries.includes(feature.id)
         const isHovered = hoveredId === feature.id
 
         return (
@@ -139,10 +169,22 @@ function InteractiveBoundary({
               <Line
                 key={`line-${feature.id}-${lineIdx}`}
                 points={points}
-                color={isHovered ? '#FFFFFF' : color}
-                lineWidth={isHovered ? lineWidth * 1.8 : lineWidth}
+                color={isSelected ? '#00FFFF' : (isHovered ? '#FFFFFF' : color)}
+                lineWidth={isSelected ? lineWidth * 2.5 : (isHovered ? lineWidth * 1.8 : lineWidth)}
                 transparent
-                opacity={isHovered ? 1 : 0.7}
+                opacity={isSelected ? 1 : (isHovered ? 0.9 : 0.7)}
+                onPointerOver={(e) => {
+                  e.stopPropagation()
+                  setHoveredId(feature.id)
+                }}
+                onPointerOut={(e) => {
+                  e.stopPropagation()
+                  setHoveredId(null)
+                }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleClick(feature)
+                }}
               />
             ))}
 
@@ -151,7 +193,7 @@ function InteractiveBoundary({
               <mesh
                 onClick={(e) => {
                   e.stopPropagation()
-                  handleClick(feature.id, feature.name)
+                  handleClick(feature)
                 }}
                 position={[0, 0, 0.001]}
                 visible={false}

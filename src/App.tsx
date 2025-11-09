@@ -56,6 +56,10 @@ function App() {
   const [manualConnectMode, setManualConnectMode] = useState(false) // 手动连接模式
   const [firstMarkerForConnect, setFirstMarkerForConnect] = useState<CustomMarker | null>(null)
 
+  // 国家选择状态
+  const [selectedCountries, setSelectedCountries] = useState<number[]>([])
+  const [countryMarkers, setCountryMarkers] = useState<Map<number, string>>(new Map()) // 国家ID -> 图钉ID
+
   // 光照模式
   const [realisticLighting, setRealisticLighting] = useState(false) // 真实光照模式（默认关闭）
 
@@ -188,6 +192,110 @@ function App() {
     setLastMarker(newMarker)
     // 不再自动打开编辑面板，让用户点击图钉后再打开
     // setSelectedMarker(newMarker)
+  }
+
+  // 点击国家创建图钉并连接
+  const handleCountryClick = (countryInfo: { id: number; name: string; latitude: number; longitude: number }) => {
+    // 只有管理员模式才能创建标记
+    if (!isAdminMode) {
+      console.log('用户模式下无法创建标记')
+      return
+    }
+
+    console.log('🌍 点击国家:', countryInfo)
+
+    // 检查这个国家是否已经有图钉
+    const existingMarkerId = countryMarkers.get(countryInfo.id)
+
+    if (existingMarkerId) {
+      // 如果已经有图钉，从选择列表中移除该国家
+      setSelectedCountries(prev => prev.filter(id => id !== countryInfo.id))
+
+      // 删除该国家的图钉
+      setCustomMarkers(prev => prev.filter(m => m.id !== existingMarkerId))
+
+      // 删除相关的连接线
+      setConnections(prev => prev.filter(c =>
+        c.fromMarkerId !== existingMarkerId && c.toMarkerId !== existingMarkerId
+      ))
+
+      // 从映射中移除
+      setCountryMarkers(prev => {
+        const newMap = new Map(prev)
+        newMap.delete(countryInfo.id)
+        return newMap
+      })
+
+      console.log(`🗑️ 移除国家 ${countryInfo.name} 的图钉`)
+      return
+    }
+
+    // 创建新图钉
+    const newMarker: CustomMarker = {
+      id: generateId(),
+      latitude: countryInfo.latitude,
+      longitude: countryInfo.longitude,
+      info: {
+        title: countryInfo.name,
+        description: `国家/地区：${countryInfo.name}`,
+        links: [],
+        images: []
+      },
+      createdAt: Date.now()
+    }
+
+    setCustomMarkers(prev => [...prev, newMarker])
+
+    // 添加到映射
+    setCountryMarkers(prev => {
+      const newMap = new Map(prev)
+      newMap.set(countryInfo.id, newMarker.id)
+      return newMap
+    })
+
+    // 更新选中的国家列表（最多保留2个）
+    setSelectedCountries(prev => {
+      const newSelected = [...prev, countryInfo.id]
+      if (newSelected.length > 2) {
+        // 如果超过2个，移除第一个
+        const removedCountryId = newSelected.shift()!
+        const removedMarkerId = countryMarkers.get(removedCountryId)
+
+        // 删除第一个国家的图钉
+        if (removedMarkerId) {
+          setCustomMarkers(prevMarkers => prevMarkers.filter(m => m.id !== removedMarkerId))
+          setConnections(prevConns => prevConns.filter(c =>
+            c.fromMarkerId !== removedMarkerId && c.toMarkerId !== removedMarkerId
+          ))
+        }
+
+        // 从映射中移除
+        setCountryMarkers(prevMap => {
+          const newMap = new Map(prevMap)
+          newMap.delete(removedCountryId)
+          return newMap
+        })
+      }
+      return newSelected.slice(-2) // 确保最多2个
+    })
+
+    // 如果这是第二个国家，自动创建连接线
+    if (selectedCountries.length === 1) {
+      const firstCountryId = selectedCountries[0]
+      const firstMarkerId = countryMarkers.get(firstCountryId)
+
+      if (firstMarkerId) {
+        const newConnection: MarkerConnection = {
+          id: generateId(),
+          fromMarkerId: firstMarkerId,
+          toMarkerId: newMarker.id
+        }
+        setConnections(prev => [...prev, newConnection])
+        console.log(`🔗 创建连接: ${firstMarkerId} -> ${newMarker.id}`)
+      }
+    }
+
+    console.log(`📍 在国家 ${countryInfo.name} 创建图钉`)
   }
 
   // 点击自定义标记
@@ -532,6 +640,8 @@ function App() {
           onConnectionLabelChange={handleConnectionLabelChange}
           labelFontSize={labelFontSize}
           dollarFontSize={dollarFontSize}
+          onCountryClick={handleCountryClick}
+          selectedCountries={selectedCountries}
         />
       </Canvas>
 

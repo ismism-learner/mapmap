@@ -35,6 +35,8 @@ interface SceneProps {
   onConnectionLabelChange?: (connectionId: string, newLabel: string) => void
   labelFontSize?: number
   dollarFontSize?: number
+  onCountryClick?: (countryInfo: { id: number; name: string; latitude: number; longitude: number }) => void
+  selectedCountries?: number[]
 }
 
 function Scene({
@@ -55,7 +57,9 @@ function Scene({
   onLabelDrag,
   onConnectionLabelChange,
   labelFontSize = 20,
-  dollarFontSize = 25
+  dollarFontSize = 25,
+  onCountryClick,
+  selectedCountries = []
 }: SceneProps) {
   const { flyTo } = useCameraControls()
   const globeRef = useRef<Mesh>(null)
@@ -135,6 +139,8 @@ function Scene({
           color={layer.color}
           visible={layer.visible}
           isFlat={isFlatMode}
+          onCountryClick={onCountryClick}
+          selectedCountries={selectedCountries}
         />
       ))}
 
