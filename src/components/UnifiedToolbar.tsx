@@ -36,7 +36,7 @@ function UnifiedToolbar({
   managementOpen,
   imageUploadOpen
 }: UnifiedToolbarProps) {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(true)
 
   if (!isAdminMode) return null
 
