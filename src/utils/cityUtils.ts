@@ -17,7 +17,7 @@ export interface City {
  */
 export async function loadCities(): Promise<City[]> {
   try {
-    const response = await fetch('/major-cities.json')
+    const response = await fetch('/cities.json')
     if (!response.ok) {
       throw new Error(`Failed to fetch cities: ${response.status}`)
     }
