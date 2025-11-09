@@ -180,6 +180,22 @@ function InteractiveBoundary({
         const isHovered = hoveredId === feature.id
         const fillColor = countryColors.get(feature.id)
 
+        // 缓存凸包几何体，避免每次渲染都创建
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const clickGeometries = useMemo(() => {
+          if (fillColor || isFlat) return null
+
+          return feature.lines.map((line, idx) => {
+            if (line.length < 3) return null
+            try {
+              return new ConvexGeometry(line)
+            } catch (error) {
+              console.warn(`Failed to create click geometry for feature ${feature.id}:`, error)
+              return null
+            }
+          }).filter(Boolean)
+        }, [feature.id, feature.lines.length, fillColor, isFlat])
+
         return (
           <group key={`feature-${feature.id}`}>
             {/* 国家填充（如果已上色） */}
@@ -303,39 +319,31 @@ function InteractiveBoundary({
               </mesh>
             )}
 
-            {/* 球形模式：不可见的点击检测区域 */}
-            {!fillColor && !isFlat && feature.lines.map((line, idx) => {
-              if (line.length < 3) return null
+            {/* 球形模式：不可见的点击检测区域（使用缓存的几何体） */}
+            {clickGeometries && clickGeometries.map((geometry, idx) => {
+              if (!geometry) return null
 
-              try {
-                // 使用ConvexGeometry创建凸包用于点击检测
-                const convexGeometry = new ConvexGeometry(line)
-
-                return (
-                  <mesh
-                    key={`click-area-${feature.id}-${idx}`}
-                    geometry={convexGeometry}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleClick(feature)
-                    }}
-                    onPointerOver={(e) => {
-                      e.stopPropagation()
-                      setHoveredId(feature.id)
-                    }}
-                    onPointerOut={(e) => {
-                      e.stopPropagation()
-                      setHoveredId(null)
-                    }}
-                    visible={false}
-                  >
-                    <meshBasicMaterial side={THREE.DoubleSide} />
-                  </mesh>
-                )
-              } catch (error) {
-                console.warn(`Failed to create click geometry for feature ${feature.id}:`, error)
-                return null
-              }
+              return (
+                <mesh
+                  key={`click-area-${feature.id}-${idx}`}
+                  geometry={geometry}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleClick(feature)
+                  }}
+                  onPointerOver={(e) => {
+                    e.stopPropagation()
+                    setHoveredId(feature.id)
+                  }}
+                  onPointerOut={(e) => {
+                    e.stopPropagation()
+                    setHoveredId(null)
+                  }}
+                  visible={false}
+                >
+                  <meshBasicMaterial side={THREE.DoubleSide} />
+                </mesh>
+              )
             })}
           </group>
         )

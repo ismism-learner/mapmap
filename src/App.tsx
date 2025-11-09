@@ -348,17 +348,17 @@ function App() {
   // 激活锚定事件
   const handleActivateEvent = (marker: CustomMarker) => {
     // 检查是否已经激活
-    const existingEvent = anchoredEvents.find(e => e.marker.id === marker.id)
+    const existingEvent = anchoredEvents.find(e => e.markerId === marker.id)
     if (existingEvent) {
       // 如果已激活，则停用
       handleDeactivateEvent(existingEvent.id)
       return
     }
 
-    // 创建新的锚定事件
+    // 创建新的锚定事件（只保存标记ID）
     const newEvent: AnchoredEvent = {
       id: `event-${marker.id}-${Date.now()}`,
-      marker,
+      markerId: marker.id,  // 只保存ID，不保存整个对象
       side: nextEventSide,
     }
 
@@ -727,6 +727,7 @@ function App() {
       {/* 锚定事件面板 - 左侧 */}
       <AnchoredEventPanel
         events={anchoredEvents}
+        markers={customMarkers}
         side="left"
         onClose={handleDeactivateEvent}
         onEdit={handleEditEventDetails}
@@ -735,6 +736,7 @@ function App() {
       {/* 锚定事件面板 - 右侧 */}
       <AnchoredEventPanel
         events={anchoredEvents}
+        markers={customMarkers}
         side="right"
         onClose={handleDeactivateEvent}
         onEdit={handleEditEventDetails}
