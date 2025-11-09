@@ -91,14 +91,36 @@ const AnchoredEventPanel = memo(function AnchoredEventPanel({
                 {/* 图片展示 */}
                 {marker.info.images.length > 0 && (
                   <div className="event-images">
-                    {marker.info.images.slice(0, 3).map((img) => (
-                      <img
-                        key={img.id}
-                        src={img.url}
-                        alt={img.alt}
-                        className="event-image"
-                      />
-                    ))}
+                    {marker.info.images.slice(0, 3).map((img) => {
+                      // 确定跳转链接：优先B站视频，其次第一个链接
+                      const linkUrl = marker.info.videoInfo?.url || marker.info.links[0]?.url
+
+                      return linkUrl ? (
+                        <a
+                          key={img.id}
+                          href={linkUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ cursor: 'pointer', display: 'block' }}
+                        >
+                          <img
+                            src={img.url}
+                            alt={img.alt}
+                            className="event-image"
+                            style={{ transition: 'opacity 0.2s' }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                          />
+                        </a>
+                      ) : (
+                        <img
+                          key={img.id}
+                          src={img.url}
+                          alt={img.alt}
+                          className="event-image"
+                        />
+                      )
+                    })}
                   </div>
                 )}
 
