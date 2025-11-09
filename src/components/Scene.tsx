@@ -187,6 +187,7 @@ function Scene({
             key={connection.id}
             fromMarker={fromMarker}
             toMarker={toMarker}
+            connection={connection}
             color="#00ffff"
             lineWidth={2}
             isFlat={isFlatMode}

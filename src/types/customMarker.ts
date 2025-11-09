@@ -45,7 +45,13 @@ export interface MarkerConnection {
   id: string
   fromMarkerId: string
   toMarkerId: string
-  label?: string // 连接线上的标签文字
+  label?: string // 连接线上的标签文字（简单模式）
+  // 事件信息（可选，详细模式）
+  eventInfo?: {
+    eventName: string      // 事件名称
+    time: string          // 时间
+    relationship?: string  // 关系描述
+  }
 }
 
 /**

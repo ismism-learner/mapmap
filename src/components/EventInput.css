@@ -14,7 +14,7 @@
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
   transition: all 0.3s ease;
-  z-index: 1000;
+  z-index: 800; /* 系统级面板 - 高于编辑面板 */
 }
 
 .event-input-toggle:hover {
@@ -35,7 +35,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
-  z-index: 1000;
+  z-index: 800; /* 系统级面板 - 高于编辑面板 */
   overflow: hidden;
 }
 

@@ -343,7 +343,12 @@ function App() {
       return {
         id: generateId(),
         fromMarkerId: marker1.id,
-        toMarkerId: marker2.id
+        toMarkerId: marker2.id,
+        eventInfo: {
+          eventName: gc.marker1.title,
+          time: gc.marker1.time,
+          relationship: gc.relationship
+        }
       }
     })
 
