@@ -4,7 +4,7 @@ import { ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
 import Globe from './Globe'
 import FlatMap from './FlatMap'
-import BoundaryLayer from './BoundaryLayer'
+import InteractiveBoundary from './InteractiveBoundary'
 import Marker from './Marker'
 import Pushpin from './Pushpin'
 import MarkerConnector from './MarkerConnector'
@@ -115,13 +115,14 @@ function Scene({
         </mesh>
       )}
 
-      {/* 边界线图层 */}
+      {/* 交互式边界线图层 */}
       {layers.map((layer) => (
-        <BoundaryLayer
+        <InteractiveBoundary
           key={layer.id}
           shpPath={layer.shpPath}
           color={layer.color}
           visible={layer.visible}
+          isFlat={isFlatMode}
         />
       ))}
 
