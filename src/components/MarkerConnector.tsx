@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from 'react'
+import { useMemo, useState, useRef, memo } from 'react'
 import { Vector3, QuadraticBezierCurve3, Mesh } from 'three'
 import { Line, Html } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
@@ -167,8 +167,13 @@ function MarkerConnector({
     }
   }
 
-  // 美元符号沿着曲线移动
+  // 美元符号沿着曲线移动（性能优化：降低更新频率）
+  const frameCountRef = useRef(0)
   useFrame((_state, delta) => {
+    // 每2帧更新一次，减少50%的计算量
+    frameCountRef.current++
+    if (frameCountRef.current % 2 !== 0) return
+
     if (points.length > 1) {
       // 更新进度（0到1循环）
       progressRef.current += delta * 0.5 // 调整速度
@@ -219,6 +224,7 @@ function MarkerConnector({
         <Html
           position={[dollarPosition.x, dollarPosition.y, dollarPosition.z]}
           center
+          occlude={globeRef ? [globeRef] : undefined}
           transform
           sprite
           distanceFactor={0.15}
@@ -382,4 +388,22 @@ function MarkerConnector({
   )
 }
 
-export default MarkerConnector
+// 使用 memo 优化性能，避免不必要的重渲染
+export default memo(MarkerConnector, (prevProps, nextProps) => {
+  // 自定义比较函数：只在关键属性变化时重新渲染
+  return (
+    prevProps.fromMarker.id === nextProps.fromMarker.id &&
+    prevProps.toMarker.id === nextProps.toMarker.id &&
+    prevProps.fromMarker.latitude === nextProps.fromMarker.latitude &&
+    prevProps.fromMarker.longitude === nextProps.fromMarker.longitude &&
+    prevProps.toMarker.latitude === nextProps.toMarker.latitude &&
+    prevProps.toMarker.longitude === nextProps.toMarker.longitude &&
+    prevProps.connection.id === nextProps.connection.id &&
+    prevProps.color === nextProps.color &&
+    prevProps.lineWidth === nextProps.lineWidth &&
+    prevProps.isFlat === nextProps.isFlat &&
+    prevProps.label === nextProps.label &&
+    prevProps.labelFontSize === nextProps.labelFontSize &&
+    prevProps.dollarFontSize === nextProps.dollarFontSize
+  )
+})
