@@ -23,7 +23,7 @@ function FlatMapControls({
   maxZoom = 12     // 最大缩放：可以看到细节
 }: FlatMapControlsProps) {
   const controlsRef = useRef<any>(null)
-  const { camera, gl } = useThree()
+  const { camera, gl, size } = useThree()
 
   // 初始化相机位置和限制
   useEffect(() => {
@@ -32,7 +32,6 @@ function FlatMapControls({
       const perspCamera = camera as THREE.PerspectiveCamera
 
       // 计算距离限制（基于缩放级别）
-      // 距离越小 = 缩放越大
       const maxDistance = mapHeight / (2 * Math.tan((perspCamera.fov * Math.PI) / 360)) * (1 / minZoom)
       const minDistance = mapHeight / (2 * Math.tan((perspCamera.fov * Math.PI) / 360)) * (1 / maxZoom)
 
@@ -49,38 +48,40 @@ function FlatMapControls({
 
   // 每帧检查并限制平移范围
   useFrame(() => {
-    if (controlsRef.current && 'fov' in camera) {
-      const controls = controlsRef.current
-      const target = controls.target
-      const perspCamera = camera as THREE.PerspectiveCamera
+    if (!controlsRef.current || !('fov' in camera)) return
 
-      // 计算当前缩放级别（基于相机距离）
-      const distance = perspCamera.position.z
-      const fov = perspCamera.fov * (Math.PI / 180)
-      const viewportHeight = 2 * Math.tan(fov / 2) * distance
-      const viewportWidth = viewportHeight * perspCamera.aspect
+    const controls = controlsRef.current
+    const perspCamera = camera as THREE.PerspectiveCamera
 
-      // 计算平移边界
-      // 如果视口大于地图，则锁定在中心
-      // 如果视口小于地图，则允许平移但不超出地图边界
-      const maxX = Math.max(0, (mapWidth - viewportWidth) / 2)
-      const maxY = Math.max(0, (mapHeight - viewportHeight) / 2)
+    // 计算当前视口大小
+    const distance = Math.abs(perspCamera.position.z)
+    const vFov = perspCamera.fov * (Math.PI / 180)
+    const viewportHeight = 2 * Math.tan(vFov / 2) * distance
+    const viewportWidth = viewportHeight * (size.width / size.height)
 
-      // 限制X轴平移
-      if (target.x > maxX) {
-        target.x = maxX
-      } else if (target.x < -maxX) {
-        target.x = -maxX
-      }
+    // 计算允许的最大平移距离
+    const maxX = Math.max(0, (mapWidth - viewportWidth) / 2)
+    const maxY = Math.max(0, (mapHeight - viewportHeight) / 2)
 
-      // 限制Y轴平移
-      if (target.y > maxY) {
-        target.y = maxY
-      } else if (target.y < -maxY) {
-        target.y = -maxY
-      }
+    // 获取当前target位置
+    const target = controls.target
 
-      controls.update()
+    // 限制并更新target位置
+    let changed = false
+
+    if (Math.abs(target.x) > maxX) {
+      target.x = Math.sign(target.x) * maxX
+      changed = true
+    }
+
+    if (Math.abs(target.y) > maxY) {
+      target.y = Math.sign(target.y) * maxY
+      changed = true
+    }
+
+    // 如果有变化，手动更新控制器
+    if (changed) {
+      controls.target.copy(target)
     }
   })
 
@@ -88,19 +89,21 @@ function FlatMapControls({
     <OrbitControls
       ref={controlsRef}
       args={[camera, gl.domElement]}
-      enableRotate={false}      // 禁止旋转
-      enablePan={true}           // 启用平移
-      enableZoom={true}          // 启用缩放
-      zoomSpeed={0.8}            // 缩放速度
-      panSpeed={0.5}             // 平移速度
+      enableRotate={false}
+      enablePan={true}
+      enableZoom={true}
+      zoomSpeed={0.8}
+      panSpeed={0.5}
       mouseButtons={{
-        LEFT: THREE.MOUSE.PAN,   // 左键平移
-        MIDDLE: THREE.MOUSE.DOLLY, // 中键缩放
-        RIGHT: THREE.MOUSE.PAN   // 右键也是平移
+        LEFT: THREE.MOUSE.PAN,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.PAN
       }}
-      screenSpacePanning={true}  // 屏幕空间平移（更直观）
-      dampingFactor={0.05}       // 阻尼系数
-      enableDamping={true}       // 启用阻尼（平滑效果）
+      screenSpacePanning={true}
+      dampingFactor={0.1}
+      enableDamping={true}
+      maxPolarAngle={Math.PI / 2}
+      minPolarAngle={Math.PI / 2}
     />
   )
 }

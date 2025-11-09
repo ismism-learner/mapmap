@@ -132,19 +132,31 @@ function InteractiveBoundary({
     }))
   })
 
-  const handlePointerOver = (id: number, name?: string) => {
-    setHoveredId(id)
-    setFeatures(prev => prev.map(f =>
-      f.id === id ? { ...f, targetIntensity: 0.6 } : f
-    ))
-    console.log(`🖱️ 鼠标进入: ${name}`)
+  const handleClick = (id: number, name?: string) => {
+    // 如果点击的是已选中的区域，则取消选中
+    if (hoveredId === id) {
+      setHoveredId(null)
+      setFeatures(prev => prev.map(f =>
+        f.id === id ? { ...f, targetIntensity: 0 } : f
+      ))
+      console.log(`🖱️ 取消选择: ${name}`)
+    } else {
+      // 否则选中新区域，并取消之前的选择
+      setHoveredId(id)
+      setFeatures(prev => prev.map(f =>
+        f.id === id ? { ...f, targetIntensity: 0.6 } : { ...f, targetIntensity: 0 }
+      ))
+      console.log(`🖱️ 点击选中: ${name}`)
+    }
   }
 
-  const handlePointerOut = (id: number) => {
-    setHoveredId(null)
-    setFeatures(prev => prev.map(f =>
-      f.id === id ? { ...f, targetIntensity: 0 } : f
-    ))
+  // 处理点击空白区域（取消选中）
+  const handleBackgroundClick = () => {
+    if (hoveredId !== null) {
+      setHoveredId(null)
+      setFeatures(prev => prev.map(f => ({ ...f, targetIntensity: 0 })))
+      console.log('🖱️ 点击空白区域，取消选择')
+    }
   }
 
   if (!visible || loading || features.length === 0) {
@@ -153,6 +165,20 @@ function InteractiveBoundary({
 
   return (
     <group ref={groupRef} name="interactive-boundary-layer">
+      {/* 背景层：捕获空白区域点击 */}
+      <mesh
+        onClick={handleBackgroundClick}
+        position={[0, 0, isFlat ? -0.01 : 0]}
+        visible={false}
+      >
+        {isFlat ? (
+          <planeGeometry args={[mapWidth * 2, mapHeight * 2]} />
+        ) : (
+          <sphereGeometry args={[radius * 0.99, 64, 64]} />
+        )}
+        <meshBasicMaterial transparent opacity={0} />
+      </mesh>
+
       {features.map((feature) => {
         const isHovered = hoveredId === feature.id
 
@@ -185,13 +211,9 @@ function InteractiveBoundary({
             {/* 平面模式：填充区域用于鼠标检测和内发光 */}
             {isFlat && feature.lines.length > 0 && feature.lines[0].length > 2 && (
               <mesh
-                onPointerOver={(e) => {
+                onClick={(e) => {
                   e.stopPropagation()
-                  handlePointerOver(feature.id, feature.name)
-                }}
-                onPointerOut={(e) => {
-                  e.stopPropagation()
-                  handlePointerOut(feature.id)
+                  handleClick(feature.id, feature.name)
                 }}
                 position={[0, 0, 0.001]} // 略微抬高避免 z-fighting
               >
@@ -211,20 +233,16 @@ function InteractiveBoundary({
               </mesh>
             )}
 
-            {/* 球形模式：使用管道几何体创建可悬停的边界 */}
+            {/* 球形模式：使用管道几何体创建可点击的边界 */}
             {!isFlat && feature.lines.length > 0 && feature.lines.map((points, lineIdx) => {
               if (points.length < 2) return null
 
               return (
                 <mesh
                   key={`tube-${feature.id}-${lineIdx}`}
-                  onPointerOver={(e) => {
+                  onClick={(e) => {
                     e.stopPropagation()
-                    handlePointerOver(feature.id, feature.name)
-                  }}
-                  onPointerOut={(e) => {
-                    e.stopPropagation()
-                    handlePointerOut(feature.id)
+                    handleClick(feature.id, feature.name)
                   }}
                 >
                   <tubeGeometry
