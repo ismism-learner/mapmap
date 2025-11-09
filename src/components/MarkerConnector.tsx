@@ -3,6 +3,7 @@ import { Vector3, QuadraticBezierCurve3, Mesh } from 'three'
 import { Line, Html } from '@react-three/drei'
 import { lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
 import { CustomMarker, MarkerConnection } from '../types/customMarker'
+import { CheckIcon, CloseIcon } from './Icons'
 
 interface MarkerConnectorProps {
   fromMarker: CustomMarker
@@ -248,9 +249,12 @@ function MarkerConnector({
                 fontSize: '11px',
                 cursor: 'pointer',
                 fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              ✓
+              <CheckIcon size={14} color="black" />
             </button>
             <button
               onClick={handleCancel}
@@ -263,9 +267,12 @@ function MarkerConnector({
                 fontSize: '11px',
                 cursor: 'pointer',
                 fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              ✕
+              <CloseIcon size={14} color="white" />
             </button>
           </div>
         </Html>

@@ -1,4 +1,5 @@
 import { City } from '../utils/cityUtils'
+import { CloseIcon } from './Icons'
 import './InfoCard.css'
 
 interface InfoCardProps {
@@ -25,7 +26,7 @@ function InfoCard({ city, onClose }: InfoCardProps) {
       <div className="info-card-header">
         <h2>{city.name}</h2>
         <button className="close-button" onClick={onClose}>
-          ×
+          <CloseIcon size={20} />
         </button>
       </div>
 

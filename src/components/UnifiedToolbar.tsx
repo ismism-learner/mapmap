@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CloseIcon } from './Icons'
 import './UnifiedToolbar.css'
 
 interface UnifiedToolbarProps {
@@ -210,7 +211,7 @@ function UnifiedToolbar({
               onClick={() => setShowColorPicker(false)}
               title="关闭"
             >
-              ✕
+              <CloseIcon size={16} />
             </button>
           </div>
           <div className="color-picker-body">
