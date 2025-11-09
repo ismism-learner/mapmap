@@ -6,6 +6,7 @@ import SearchBar from './components/SearchBar'
 import InfoCard from './components/InfoCard'
 import EditableInfoPanel from './components/EditableInfoPanel'
 import ModeToggle from './components/ModeToggle'
+import SliceTransition from './components/SliceTransition'
 import { City, loadCities } from './utils/cityUtils'
 import { TextureConfig, loadTextures } from './types/texture'
 import {
@@ -53,8 +54,14 @@ function App() {
 
   // 地图模式（球形/平面）
   const [isFlatMode, setIsFlatMode] = useState(false) // 默认球形模式
+  const [isTransitioning, setIsTransitioning] = useState(false) // 切片过渡状态
 
   const [flyToCity, setFlyToCity] = useState<{ lon: number; lat: number } | null>(null)
+
+  // 监听地图模式切换，触发过渡动画
+  useEffect(() => {
+    setIsTransitioning(true)
+  }, [isFlatMode])
 
   // 加载城市数据
   useEffect(() => {
@@ -296,6 +303,13 @@ function App() {
         manualConnectMode={manualConnectMode}
         onToggleManualConnect={handleToggleManualConnect}
         hasSelectedMarker={!!firstMarkerForConnect}
+      />
+
+      {/* 伪3D切片过渡效果 */}
+      <SliceTransition
+        isTransitioning={isTransitioning}
+        sliceCount={12}
+        duration={800}
       />
     </div>
   )
