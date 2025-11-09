@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { City, searchCities } from '../utils/cityUtils'
+import { CloseIcon } from './Icons'
 import './SearchBar.css'
 
 interface SearchBarProps {
@@ -114,7 +115,7 @@ function SearchBar({ cities, onSelectCity }: SearchBarProps) {
               setShowResults(false)
             }}
           >
-            ×
+            <CloseIcon size={16} />
           </button>
         )}
       </div>

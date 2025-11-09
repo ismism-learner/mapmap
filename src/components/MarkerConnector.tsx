@@ -3,6 +3,7 @@ import { Vector3, QuadraticBezierCurve3, Mesh } from 'three'
 import { Line, Html } from '@react-three/drei'
 import { lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
 import { CustomMarker, MarkerConnection } from '../types/customMarker'
+import { CheckIcon, CloseIcon } from './Icons'
 
 interface MarkerConnectorProps {
   fromMarker: CustomMarker
@@ -22,10 +23,10 @@ interface MarkerConnectorProps {
 }
 
 /**
- * 图钉之间的连接线
- * - 球形模式：使用简化的贝塞尔曲线（性能优化）
+ * 图钉之间的连接线（极简性能优化版）
+ * - 球形模式：使用简化的贝塞尔曲线
  * - 平面模式：使用直线连接（2D）
- * - 美元符号沿曲线移动，表示方向
+ * - 移除所有Html箭头，避免性能开销
  * - 支持双击编辑标签
  * - 支持悬停显示事件信息
  */
@@ -164,25 +165,6 @@ function MarkerConnector({
     }
   }
 
-  // 计算3个箭头位置（静态，不需要useFrame）
-  const arrowPositions = useMemo(() => {
-    if (points.length < 2) return []
-
-    // 在25%, 50%, 75%位置放置箭头
-    const positions = [0.25, 0.5, 0.75].map((t) => {
-      const index = Math.floor(t * (points.length - 1))
-      const nextIndex = Math.min(index + 1, points.length - 1)
-      const localT = (t * (points.length - 1)) - index
-
-      const current = points[index]
-      const next = points[nextIndex]
-
-      return new Vector3().lerpVectors(current, next, localT)
-    })
-
-    return positions
-  }, [points])
-
   return (
     <group>
       <Line
@@ -214,48 +196,6 @@ function MarkerConnector({
           }
         }}
       />
-
-      {/* 3个箭头 - 用CSS动画创造移动错觉（零useFrame性能开销） */}
-      {arrowPositions.map((position, index) => (
-        <Html
-          key={index}
-          position={[position.x, position.y, position.z]}
-          center
-          occlude={globeRef ? [globeRef] : undefined}
-          transform
-          sprite
-          distanceFactor={0.15}
-          style={{
-            pointerEvents: 'none',
-            zIndex: 50,
-          }}
-          zIndexRange={[100, 0]}
-        >
-          <div
-            style={{
-              color: color,
-              fontSize: `${dollarFontSize}px`,
-              fontWeight: 'bold',
-              textShadow: '0 0 6px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 255, 255, 0.8)',
-              userSelect: 'none',
-              animation: `flowArrow 1.5s ease-in-out infinite`,
-              animationDelay: `${index * 0.5}s`, // 依次延迟，创造流动效果
-            }}
-          >
-            →
-          </div>
-          {index === 0 && (
-            <style>
-              {`
-                @keyframes flowArrow {
-                  0%, 100% { opacity: 0.2; transform: scale(0.8); }
-                  50% { opacity: 1; transform: scale(1.2); }
-                }
-              `}
-            </style>
-          )}
-        </Html>
-      ))}
 
       {/* 标签编辑（只在编辑时显示） */}
       {!connection.eventInfo && isEditing && (
@@ -309,9 +249,12 @@ function MarkerConnector({
                 fontSize: '11px',
                 cursor: 'pointer',
                 fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              ✓
+              <CheckIcon size={14} color="black" />
             </button>
             <button
               onClick={handleCancel}
@@ -324,9 +267,12 @@ function MarkerConnector({
                 fontSize: '11px',
                 cursor: 'pointer',
                 fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              ✕
+              <CloseIcon size={14} color="white" />
             </button>
           </div>
         </Html>

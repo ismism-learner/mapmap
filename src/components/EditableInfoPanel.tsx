@@ -7,6 +7,7 @@ import {
   generateId
 } from '../types/customMarker'
 import { fetchBilibiliVideoInfo, isBilibiliURL } from '../utils/bilibiliUtils'
+import { CloseIcon, CheckIcon, PlusIcon } from './Icons'
 import './EditableInfoPanel.css'
 
 interface EditableInfoPanelProps {
@@ -138,7 +139,7 @@ function EditableInfoPanel({
             onClose()
           }}
         >
-          ×
+          <CloseIcon size={20} />
         </button>
       </div>
 
@@ -210,7 +211,7 @@ function EditableInfoPanel({
                       className="delete-image-btn"
                       onClick={() => handleDeleteImage(img.id)}
                     >
-                      ×
+                      <CloseIcon size={16} />
                     </button>
                   )}
                 </div>
@@ -234,7 +235,7 @@ function EditableInfoPanel({
                       className="delete-link-btn"
                       onClick={() => handleDeleteLink(link.id)}
                     >
-                      ×
+                      <CloseIcon size={16} />
                     </button>
                   )}
                 </li>
@@ -250,14 +251,23 @@ function EditableInfoPanel({
               className="add-btn"
               onClick={handleAddBilibiliVideo}
               disabled={isLoadingVideo || !!videoInfo}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
             >
-              {isLoadingVideo ? '加载中...' : videoInfo ? '✓ 已添加视频' : '+ 添加B站视频'}
+              {isLoadingVideo ? '加载中...' : videoInfo ? (
+                <>
+                  <CheckIcon size={14} /> 已添加视频
+                </>
+              ) : (
+                <>
+                  <PlusIcon size={14} /> 添加B站视频
+                </>
+              )}
             </button>
-            <button className="add-btn" onClick={handleAddImage}>
-              + 添加图片
+            <button className="add-btn" onClick={handleAddImage} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+              <PlusIcon size={14} /> 添加图片
             </button>
-            <button className="add-btn" onClick={handleAddLink}>
-              + 添加链接
+            <button className="add-btn" onClick={handleAddLink} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+              <PlusIcon size={14} /> 添加链接
             </button>
           </div>
         )}

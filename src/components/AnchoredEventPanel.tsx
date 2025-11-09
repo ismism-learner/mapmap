@@ -1,5 +1,6 @@
 import { useState, memo } from 'react'
 import { CustomMarker } from '../types/customMarker'
+import { LocationIcon, ClockIcon, LinkIcon, EditIcon, CloseIcon, MinusIcon, PlusIcon } from './Icons'
 import './AnchoredEventPanel.css'
 
 export interface AnchoredEvent {
@@ -51,7 +52,7 @@ const AnchoredEventPanel = memo(function AnchoredEventPanel({
           onClick={() => setIsExpanded(!isExpanded)}
           title={isExpanded ? '收起' : '展开更多'}
         >
-          {isExpanded ? '−' : '+'}
+          {isExpanded ? <MinusIcon size={20} /> : <PlusIcon size={20} />}
           <span className="event-count">{sideEvents.length}</span>
         </button>
       )}
@@ -70,7 +71,7 @@ const AnchoredEventPanel = memo(function AnchoredEventPanel({
                 onClick={() => onClose(event.id)}
                 title="关闭"
               >
-                ×
+                <CloseIcon size={18} />
               </button>
             </div>
 
@@ -81,11 +82,11 @@ const AnchoredEventPanel = memo(function AnchoredEventPanel({
 
               <div className="event-meta">
                 <div className="event-location">
-                  📍 {event.marker.latitude.toFixed(2)}°, {event.marker.longitude.toFixed(2)}°
+                  <LocationIcon size={14} /> {event.marker.latitude.toFixed(2)}°, {event.marker.longitude.toFixed(2)}°
                 </div>
                 {event.marker.createdAt && (
                   <div className="event-time">
-                    🕒 {new Date(event.marker.createdAt).toLocaleDateString('zh-CN')}
+                    <ClockIcon size={14} /> {new Date(event.marker.createdAt).toLocaleDateString('zh-CN')}
                   </div>
                 )}
               </div>
@@ -113,7 +114,7 @@ const AnchoredEventPanel = memo(function AnchoredEventPanel({
                       rel="noopener noreferrer"
                       className="event-link"
                     >
-                      🔗 {link.title || link.url}
+                      <LinkIcon size={14} /> {link.title || link.url}
                     </a>
                   ))}
                 </div>
@@ -123,7 +124,7 @@ const AnchoredEventPanel = memo(function AnchoredEventPanel({
                 className="event-edit-btn"
                 onClick={() => onEdit(event.marker)}
               >
-                ✏️ 编辑详情
+                <EditIcon size={14} /> 编辑详情
               </button>
             </div>
 
