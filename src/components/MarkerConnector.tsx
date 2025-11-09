@@ -17,12 +17,14 @@ interface MarkerConnectorProps {
   mapHeight?: number
   label?: string // 连接线标签
   onLabelChange?: (newLabel: string) => void // 标签修改回调
+  globeRef?: React.RefObject<Mesh> // 地球引用，用于遮挡检测
 }
 
 /**
  * 图钉之间的连接线
  * - 球形模式：使用简化的贝塞尔曲线（性能优化）
  * - 平面模式：使用直线连接（2D）
+ * - 美元符号沿曲线移动，表示方向
  * - 支持双击编辑标签
  * - 支持悬停显示事件信息
  */
@@ -37,16 +39,17 @@ function MarkerConnector({
   mapWidth = 4,
   mapHeight = 2,
   label = '',
-  onLabelChange
+  onLabelChange,
+  globeRef
 }: MarkerConnectorProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(label)
   const [hovered, setHovered] = useState(false)
-  const arrowRef = useRef<Mesh>(null)
   const progressRef = useRef(0)
+  const [dollarPosition, setDollarPosition] = useState<Vector3>(new Vector3())
 
-  // 计算连线的点和中点
-  const { points, midpoint } = useMemo(() => {
+  // 计算连线的点和标签位置
+  const { points, labelPosition } = useMemo(() => {
     if (isFlat) {
       // 平面模式：简单的直线连接
       const start = lonLatToFlatPosition(
@@ -70,7 +73,7 @@ function MarkerConnector({
 
       return {
         points: [startVec, endVec],
-        midpoint: mid
+        labelPosition: mid
       }
     } else {
       // 球形模式：简化的贝塞尔曲线
@@ -91,8 +94,8 @@ function MarkerConnector({
       // 计算两点之间的角度
       const angle = startVec.angleTo(endVec)
 
-      // 使用球面插值计算中点，避免对跖点问题
-      const mid = new Vector3()
+      // 计算贝塞尔曲线的控制点
+      const controlPoint = new Vector3()
 
       if (angle > Math.PI * 0.95) {
         // 对于接近对跖点的情况（>171度），使用垂直于两点的向量
@@ -105,25 +108,28 @@ function MarkerConnector({
           cross.crossVectors(startVec, arbitrary)
         }
         cross.normalize()
-        mid.copy(cross).multiplyScalar(radius)
+        controlPoint.copy(cross).multiplyScalar(radius)
       } else {
         // 正常情况：使用球面插值（slerp）
-        mid.copy(startVec).lerp(endVec, 0.5).normalize()
+        controlPoint.copy(startVec).lerp(endVec, 0.5).normalize()
 
         // 计算弧线高度（基于角度）
         const arcHeight = Math.min(Math.sin(angle / 2) * 0.3, 0.3)
-        mid.multiplyScalar(radius + arcHeight)
+        controlPoint.multiplyScalar(radius + arcHeight)
       }
 
       // 创建贝塞尔曲线
-      const curve = new QuadraticBezierCurve3(startVec, mid, endVec)
+      const curve = new QuadraticBezierCurve3(startVec, controlPoint, endVec)
 
       // 减少点数：从50降到20，大幅提升性能
       const curvePoints = curve.getPoints(20)
 
+      // 标签位置：使用曲线在 t=0.5 处的实际点（曲线的真实中点）
+      const actualMidpoint = curve.getPoint(0.5)
+
       return {
         points: curvePoints,
-        midpoint: mid
+        labelPosition: actualMidpoint
       }
     }
   }, [fromMarker, toMarker, radius, isFlat, mapWidth, mapHeight])
@@ -157,16 +163,16 @@ function MarkerConnector({
     }
   }
 
-  // 动画箭头沿着曲线移动
+  // 美元符号沿着曲线移动
   useFrame((_state, delta) => {
-    if (arrowRef.current && points.length > 1) {
+    if (points.length > 1) {
       // 更新进度（0到1循环）
       progressRef.current += delta * 0.5 // 调整速度
       if (progressRef.current > 1) {
         progressRef.current = 0
       }
 
-      // 计算箭头在曲线上的位置
+      // 计算美元符号在曲线上的位置
       const index = Math.floor(progressRef.current * (points.length - 1))
       const nextIndex = Math.min(index + 1, points.length - 1)
       const localProgress = (progressRef.current * (points.length - 1)) - index
@@ -176,11 +182,7 @@ function MarkerConnector({
 
       // 线性插值获取当前位置
       const position = new Vector3().lerpVectors(currentPoint, nextPoint, localProgress)
-      arrowRef.current.position.copy(position)
-
-      // 计算箭头方向（朝向下一个点）
-      const direction = new Vector3().subVectors(nextPoint, currentPoint).normalize()
-      arrowRef.current.lookAt(position.clone().add(direction))
+      setDollarPosition(position.clone())
     }
   })
 
@@ -208,21 +210,47 @@ function MarkerConnector({
         }}
       />
 
-      {/* 动画箭头 - 雪佛龙形状 */}
-      <mesh ref={arrowRef}>
-        <coneGeometry args={[0.015, 0.04, 4]} />
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={0.9}
-        />
-      </mesh>
+      {/* 美元符号 - 沿曲线移动，始终面向观察者 */}
+      {dollarPosition && (
+        <Html
+          position={[dollarPosition.x, dollarPosition.y, dollarPosition.z]}
+          center
+          distanceFactor={isFlat ? 1 : 0.5}
+          style={{
+            pointerEvents: 'none',
+            zIndex: 50,
+          }}
+          zIndexRange={[100, 0]}
+        >
+          <div
+            style={{
+              color: color,
+              fontSize: '20px',
+              fontWeight: 'bold',
+              textShadow: '0 0 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 255, 255, 0.6)',
+              userSelect: 'none',
+              animation: 'pulse 1s ease-in-out infinite',
+            }}
+          >
+            $
+          </div>
+          <style>
+            {`
+              @keyframes pulse {
+                0%, 100% { opacity: 0.8; transform: scale(1); }
+                50% { opacity: 1; transform: scale(1.1); }
+              }
+            `}
+          </style>
+        </Html>
+      )}
 
       {/* 标签编辑（只在编辑时显示） */}
       {!connection.eventInfo && isEditing && (
         <Html
-          position={[midpoint.x, midpoint.y, midpoint.z]}
+          position={[labelPosition.x, labelPosition.y, labelPosition.z]}
           center
+          occlude={globeRef ? [globeRef] : undefined}
           distanceFactor={isFlat ? 1 : 0.5}
           style={{
             pointerEvents: 'auto',
@@ -293,8 +321,9 @@ function MarkerConnector({
       {/* 永久显示标签（事件信息或简单标签） */}
       {!isEditing && (label || connection.eventInfo) && (
         <Html
-          position={[midpoint.x, midpoint.y, midpoint.z]}
+          position={[labelPosition.x, labelPosition.y, labelPosition.z]}
           center
+          occlude={globeRef ? [globeRef] : undefined}
           distanceFactor={isFlat ? 1 : 0.5}
           style={{
             pointerEvents: hovered && connection.eventInfo ? 'auto' : 'none',

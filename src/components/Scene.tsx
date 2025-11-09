@@ -194,6 +194,7 @@ function Scene({
             isFlat={isFlatMode}
             label={connection.label}
             onLabelChange={onConnectionLabelChange ? (newLabel) => onConnectionLabelChange(connection.id, newLabel) : undefined}
+            globeRef={globeRef}
           />
         )
       })}
