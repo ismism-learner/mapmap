@@ -5,7 +5,6 @@ import LayerControl, { LayerConfig } from './components/LayerControl'
 import SearchBar from './components/SearchBar'
 import InfoCard from './components/InfoCard'
 import EditableInfoPanel from './components/EditableInfoPanel'
-import ModeToggle from './components/ModeToggle'
 import UnfoldTransition from './components/UnfoldTransition'
 import EventInput from './components/EventInput'
 import PerformanceMonitor from './components/PerformanceMonitor'
@@ -13,6 +12,8 @@ import MarkerStressTest from './components/MarkerStressTest'
 import ClickDebugger from './components/ClickDebugger'
 import AdminPanel from './components/AdminPanel'
 import ManagementPanel from './components/ManagementPanel'
+import UnifiedToolbar from './components/UnifiedToolbar'
+import ImageUpload from './components/ImageUpload'
 import { City, loadCities } from './utils/cityUtils'
 import { TextureConfig, loadTextures } from './types/texture'
 import {
@@ -68,7 +69,19 @@ function App() {
   // 管理员模式
   const [isAdminMode, setIsAdminMode] = useState(true) // 默认开启，部署时可改为false
 
+  // 面板显示状态
+  const [eventInputOpen, setEventInputOpen] = useState(false)
+  const [layerControlOpen, setLayerControlOpen] = useState(false)
+  const [managementOpen, setManagementOpen] = useState(false)
+  const [imageUploadOpen, setImageUploadOpen] = useState(false)
+
   const [flyToCity, setFlyToCity] = useState<{ lon: number; lat: number } | null>(null)
+
+  // 面板切换处理函数
+  const handleToggleEventInput = () => setEventInputOpen(!eventInputOpen)
+  const handleToggleLayerControl = () => setLayerControlOpen(!layerControlOpen)
+  const handleToggleManagement = () => setManagementOpen(!managementOpen)
+  const handleToggleImageUpload = () => setImageUploadOpen(!imageUploadOpen)
 
   // 监听地图模式切换，触发过渡动画
   useEffect(() => {
@@ -446,6 +459,29 @@ function App() {
     }
   }
 
+  // 处理图片上传
+  const handleImageUpload = (imageUrl: string) => {
+    if (!selectedMarker) {
+      console.warn('⚠️ 没有选中的标记，无法上传图片')
+      return
+    }
+
+    // 创建图片对象
+    const newImage = {
+      id: generateId(),
+      url: imageUrl,
+      alt: `图片 ${selectedMarker.info.images.length + 1}`
+    }
+
+    // 添加图片到当前选中的标记
+    const updatedInfo: MarkerInfo = {
+      ...selectedMarker.info,
+      images: [...selectedMarker.info.images, newImage]
+    }
+
+    handleSaveMarkerInfo(updatedInfo)
+  }
+
   // 获取当前选中的底图路径
   const currentTexturePath = textures.find(t => t.id === selectedTexture)?.path
 
@@ -484,18 +520,39 @@ function App() {
         <p>{isFlatMode ? '鼠标拖动平移' : '鼠标拖动旋转'} | 滚轮缩放 | 双击放置图钉</p>
       </div>
 
+      {/* 统一工具栏 - 仅管理员模式 */}
+      {isAdminMode && (
+        <UnifiedToolbar
+          isAdminMode={isAdminMode}
+          onToggleEventInput={handleToggleEventInput}
+          onToggleManualConnect={handleToggleManualConnect}
+          onToggleAutoConnect={handleToggleAutoConnect}
+          onToggleLayerControl={handleToggleLayerControl}
+          onToggleManagement={handleToggleManagement}
+          onToggleImageUpload={handleToggleImageUpload}
+          autoConnectEnabled={autoConnect}
+          manualConnectEnabled={manualConnectMode}
+          eventInputOpen={eventInputOpen}
+          layerControlOpen={layerControlOpen}
+          managementOpen={managementOpen}
+          imageUploadOpen={imageUploadOpen}
+        />
+      )}
+
       {/* 图层控制面板 */}
-      <LayerControl
-        layers={layers}
-        onLayerToggle={handleLayerToggle}
-        realisticLighting={realisticLighting}
-        onLightingToggle={() => setRealisticLighting(!realisticLighting)}
-        textures={textures}
-        selectedTexture={selectedTexture}
-        onTextureChange={setSelectedTexture}
-        isFlatMode={isFlatMode}
-        onMapModeToggle={() => setIsFlatMode(!isFlatMode)}
-      />
+      {layerControlOpen && (
+        <LayerControl
+          layers={layers}
+          onLayerToggle={handleLayerToggle}
+          realisticLighting={realisticLighting}
+          onLightingToggle={() => setRealisticLighting(!realisticLighting)}
+          textures={textures}
+          selectedTexture={selectedTexture}
+          onTextureChange={setSelectedTexture}
+          isFlatMode={isFlatMode}
+          onMapModeToggle={() => setIsFlatMode(!isFlatMode)}
+        />
+      )}
 
       {/* 城市信息卡片 */}
       <InfoCard city={selectedCity} onClose={() => setSelectedCity(null)} />
@@ -510,19 +567,30 @@ function App() {
         />
       )}
 
-      {/* 模式切换按钮 - 仅管理员模式 */}
-      {isAdminMode && (
-        <ModeToggle
-          autoConnect={autoConnect}
-          onToggleAutoConnect={handleToggleAutoConnect}
-          manualConnectMode={manualConnectMode}
-          onToggleManualConnect={handleToggleManualConnect}
-          hasSelectedMarker={!!firstMarkerForConnect}
+      {/* 批量事件创建面板 */}
+      {eventInputOpen && isAdminMode && (
+        <EventInput onCreateEvents={handleCreateEvents} />
+      )}
+
+      {/* 管理面板 - 管理图钉和连接 */}
+      {managementOpen && isAdminMode && (
+        <ManagementPanel
+          customMarkers={customMarkers}
+          connections={connections}
+          onDeleteMarker={handleDeleteMarkerById}
+          onDeleteConnection={handleDeleteConnection}
+          onSelectMarker={setSelectedMarker}
+          onClose={() => setManagementOpen(false)}
         />
       )}
 
-      {/* 批量事件创建 - 仅管理员模式 */}
-      {isAdminMode && <EventInput onCreateEvents={handleCreateEvents} />}
+      {/* 图片上传面板 */}
+      {imageUploadOpen && isAdminMode && (
+        <ImageUpload
+          onImageUpload={handleImageUpload}
+          onClose={() => setImageUploadOpen(false)}
+        />
+      )}
 
       {/* 压力测试工具 - 仅管理员模式 */}
       {isAdminMode && <MarkerStressTest onGenerateMarkers={handleGenerateTestMarkers} />}
@@ -538,17 +606,6 @@ function App() {
         connections={connections}
         onImportData={handleImportData}
       />
-
-      {/* 管理面板 - 管理图钉和连接，仅管理员模式 */}
-      {isAdminMode && (
-        <ManagementPanel
-          customMarkers={customMarkers}
-          connections={connections}
-          onDeleteMarker={handleDeleteMarkerById}
-          onDeleteConnection={handleDeleteConnection}
-          onSelectMarker={setSelectedMarker}
-        />
-      )}
 
       {/* 球形展开/收缩过渡效果 */}
       <UnfoldTransition

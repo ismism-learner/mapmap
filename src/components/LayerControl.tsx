@@ -74,7 +74,6 @@ function LayerControl({
               <div className="layer-divider" />
               <div className="texture-selector">
                 <label className="texture-label">
-                  <span className="layer-icon">🗺️</span>
                   <span>地球底图</span>
                 </label>
                 <select
@@ -103,7 +102,6 @@ function LayerControl({
                     checked={realisticLighting}
                     onChange={onLightingToggle}
                   />
-                  <span className="layer-icon">💡</span>
                   <span className="layer-name">真实光照</span>
                 </label>
               </div>
@@ -121,7 +119,6 @@ function LayerControl({
                     checked={isFlatMode}
                     onChange={onMapModeToggle}
                   />
-                  <span className="layer-icon">🗺️</span>
                   <span className="layer-name">平面地图模式</span>
                 </label>
               </div>

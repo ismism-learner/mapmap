@@ -145,7 +145,7 @@ function EditableInfoPanel({
       <div className="panel-content">
         {/* 位置信息 */}
         <div className="location-info">
-          <span>📍 {marker.latitude.toFixed(4)}°, {marker.longitude.toFixed(4)}°</span>
+          <span>{marker.latitude.toFixed(4)}°, {marker.longitude.toFixed(4)}°</span>
         </div>
 
         {/* 描述 */}
@@ -227,7 +227,7 @@ function EditableInfoPanel({
               {links.map((link) => (
                 <li key={link.id} className="link-item">
                   <a href={link.url} target="_blank" rel="noopener noreferrer">
-                    🔗 {link.text}
+                    {link.text}
                   </a>
                   {isEditing && (
                     <button
