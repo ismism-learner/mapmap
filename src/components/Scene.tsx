@@ -4,6 +4,7 @@ import { ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
 import Globe from './Globe'
 import FlatMap from './FlatMap'
+import FlatMapControls from './FlatMapControls'
 import InteractiveBoundary from './InteractiveBoundary'
 import Marker from './Marker'
 import Pushpin from './Pushpin'
@@ -178,14 +179,25 @@ function Scene({
         speed={1}
       />
 
-      {/* 轨道控制器 - 支持鼠标拖动旋转/平移 */}
-      <OrbitControls
-        enableZoom={true}
-        enablePan={isFlatMode}
-        enableRotate={!isFlatMode}
-        zoomSpeed={0.6}
-        rotateSpeed={0.4}
-      />
+      {/* 控制器 - 根据模式选择 */}
+      {isFlatMode ? (
+        /* 平面模式：带限制的缩放和平移控制 */
+        <FlatMapControls
+          mapWidth={4}
+          mapHeight={2}
+          minZoom={1.5}
+          maxZoom={12}
+        />
+      ) : (
+        /* 球形模式：旋转控制 */
+        <OrbitControls
+          enableZoom={true}
+          enablePan={false}
+          enableRotate={true}
+          zoomSpeed={0.6}
+          rotateSpeed={0.4}
+        />
+      )}
     </>
   )
 }
