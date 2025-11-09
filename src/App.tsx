@@ -59,10 +59,6 @@ function App() {
   const [firstMarkerForConnect, setFirstMarkerForConnect] = useState<CustomMarker | null>(null)
   const [eventCardMode, setEventCardMode] = useState(false) // 事件卡模式（默认关闭）
 
-  // 国家选择状态
-  const [selectedCountries, setSelectedCountries] = useState<number[]>([])
-  const [countryMarkers, setCountryMarkers] = useState<Map<number, string>>(new Map()) // 国家ID -> 图钉ID
-
   // 国家上色状态
   const [paintMode, setPaintMode] = useState(false) // 上色模式
   const [selectedColor, setSelectedColor] = useState('#FF6B6B') // 选中的颜色
@@ -148,7 +144,7 @@ function App() {
     )
   }, [])
 
-  // 选择城市（从搜索栏）（性能优化：useCallback）
+  // 选择城市/国家（从搜索栏）（性能优化：useCallback）
   const handleSelectCity = useCallback((city: City) => {
     setSelectedCity(city)
     setFlyToCity({
@@ -156,17 +152,27 @@ function App() {
       lat: parseFloat(city.latitude),
     })
 
-    // 添加到城市标记列表（如果不存在）
-    setCityMarkers((prev) => {
-      if (prev.find((m) => m.id === city.id)) {
-        return prev
+    // 如果是管理员模式，创建一个永久图钉
+    if (isAdminMode) {
+      const newMarker: CustomMarker = {
+        id: generateId(),
+        latitude: parseFloat(city.latitude),
+        longitude: parseFloat(city.longitude),
+        info: {
+          title: city.name,
+          description: city.isCountry ? `国家/地区：${city.name}` : `${city.name}, ${city.country_name}`,
+          links: [],
+          images: []
+        },
+        createdAt: Date.now()
       }
-      return [...prev, city]
-    })
+      setCustomMarkers((prev) => [...prev, newMarker])
+      console.log(`📍 搜索创建图钉: ${city.name}`)
+    }
 
     // 清除飞行目标（防止重复触发）
     setTimeout(() => setFlyToCity(null), 100)
-  }, [])
+  }, [isAdminMode])
 
   // 双击地球放置自定义标记（性能优化：useCallback）
   const handleDoubleClick = useCallback((latitude: number, longitude: number) => {
@@ -206,54 +212,6 @@ function App() {
     // 不再自动打开编辑面板，让用户点击图钉后再打开
     // setSelectedMarker(newMarker)
   }, [isAdminMode, autoConnect])
-
-  // 点击国家创建图钉并连接（性能优化：useCallback）
-  const handleCountryClick = useCallback((countryInfo: { id: number; name: string; latitude: number; longitude: number }) => {
-    // 只有管理员模式才能创建标记
-    if (!isAdminMode) {
-      console.log('用户模式下无法创建标记')
-      return
-    }
-
-    console.log('🌍 点击国家:', countryInfo)
-
-    // 检查这个国家是否已经有图钉
-    setCountryMarkers(prevCountryMarkers => {
-      const existingMarkerId = prevCountryMarkers.get(countryInfo.id)
-
-      if (existingMarkerId) {
-        // 如果已经有图钉，直接返回（不删除，保持图钉）
-        console.log(`📍 国家 ${countryInfo.name} 已有图钉，跳过创建`)
-        return prevCountryMarkers
-      }
-
-      // 创建新图钉
-      const newMarker: CustomMarker = {
-        id: generateId(),
-        latitude: countryInfo.latitude,
-        longitude: countryInfo.longitude,
-        info: {
-          title: countryInfo.name,
-          description: `国家/地区：${countryInfo.name}`,
-          links: [],
-          images: []
-        },
-        createdAt: Date.now()
-      }
-
-      setCustomMarkers(prev => [...prev, newMarker])
-
-      // 更新选中的国家列表（永久保留，不删除）
-      setSelectedCountries(prev => [...prev, countryInfo.id])
-
-      console.log(`📍 在国家 ${countryInfo.name} 创建永久图钉`)
-
-      // 添加到映射
-      const newMap = new Map(prevCountryMarkers)
-      newMap.set(countryInfo.id, newMarker.id)
-      return newMap
-    })
-  }, [isAdminMode])
 
   // 激活锚定事件（允许同一图钉创建多个事件卡）（性能优化：useCallback）
   const handleActivateEvent = useCallback((marker: CustomMarker) => {
@@ -711,8 +669,6 @@ function App() {
           onConnectionLabelChange={handleConnectionLabelChange}
           labelFontSize={labelFontSize}
           dollarFontSize={dollarFontSize}
-          onCountryClick={handleCountryClick}
-          selectedCountries={selectedCountries}
           paintMode={paintMode}
           selectedColor={selectedColor}
           countryColors={countryColors}

@@ -38,8 +38,6 @@ interface SceneProps {
   onConnectionLabelChange?: (connectionId: string, newLabel: string) => void
   labelFontSize?: number
   dollarFontSize?: number
-  onCountryClick?: (countryInfo: { id: number; name: string; latitude: number; longitude: number }) => void
-  selectedCountries?: number[]
   paintMode?: boolean
   selectedColor?: string
   countryColors?: Map<number, string>
@@ -67,8 +65,6 @@ function Scene({
   onConnectionLabelChange,
   labelFontSize = 20,
   dollarFontSize = 25,
-  onCountryClick,
-  selectedCountries = [],
   paintMode = false,
   selectedColor = '#FF6B6B',
   countryColors = new Map(),
@@ -192,8 +188,6 @@ function Scene({
           color={layer.color}
           visible={layer.visible}
           isFlat={isFlatMode}
-          onCountryClick={onCountryClick}
-          selectedCountries={selectedCountries}
           paintMode={paintMode}
           selectedColor={selectedColor}
           countryColors={countryColors}
