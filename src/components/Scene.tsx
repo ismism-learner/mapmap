@@ -83,12 +83,24 @@ function Scene({
   const [isCameraMoving, setIsCameraMoving] = useState(false)
   const moveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // 相机变化处理：开始移动时隐藏连接线，停止后200ms显示
+  // 拖动开始：立即隐藏连接线
+  const handleCameraStart = useCallback(() => {
+    setIsCameraMoving(true)
+    // 立即清空连接线，避免移动时的计算和渲染
+    if (onConnectorLinesUpdate) {
+      onConnectorLinesUpdate([])
+    }
+    // 清除之前的定时器
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current)
+    }
+  }, [onConnectorLinesUpdate])
+
+  // 相机变化处理：持续移动时重置定时器
   const handleCameraChange = useCallback(() => {
-    // 标记为正在移动并清空连接线（性能优化）
+    // 确保移动状态
     if (!isCameraMoving) {
       setIsCameraMoving(true)
-      // 立即清空连接线，避免移动时的计算和渲染
       if (onConnectorLinesUpdate) {
         onConnectorLinesUpdate([])
       }
@@ -99,10 +111,10 @@ function Scene({
       clearTimeout(moveTimeoutRef.current)
     }
 
-    // 200ms后如果没有新的移动，则认为已停止
+    // 100ms后如果没有新的移动，则认为已停止（缩短延迟）
     moveTimeoutRef.current = setTimeout(() => {
       setIsCameraMoving(false)
-    }, 200)
+    }, 100)
   }, [isCameraMoving, onConnectorLinesUpdate])
 
   // 当 flyToCity 改变时，执行相机动画
@@ -285,6 +297,7 @@ function Scene({
           mapHeight={2}
           minZoom={1.5}
           maxZoom={12}
+          onStart={handleCameraStart}
           onChange={handleCameraChange}
         />
       ) : (
@@ -295,6 +308,9 @@ function Scene({
           enableRotate={true}
           zoomSpeed={0.6}
           rotateSpeed={0.4}
+          enableDamping={true}
+          dampingFactor={0.05}
+          onStart={handleCameraStart}
           onChange={handleCameraChange}
         />
       )}
