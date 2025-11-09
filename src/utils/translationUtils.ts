@@ -151,7 +151,9 @@ export function translateToEnglish(
 
   // 3. 尝试国家翻译（从 countries.json 的 translations["zh-CN"] 字段）
   if (countries) {
-    const country = countries.find(c => c.translations['zh-CN'] === trimmed)
+    const country = countries.find(c =>
+      c.translations && c.translations['zh-CN'] === trimmed
+    )
     if (country) {
       console.log(`🔄 翻译国家: "${trimmed}" -> "${country.name}"`)
       return country.name

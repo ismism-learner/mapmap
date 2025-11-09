@@ -120,60 +120,55 @@ export async function geocodeLocation(
     parts.map(part => smartTranslate(part))
   )
 
-  let searchQuery = ''
   let countryName = ''
   let stateName = ''
   let cityName = ''
 
   if (translatedParts.length === 1) {
     // 单个名称：可能是国家或城市
-    searchQuery = translatedParts[0]
     countryName = translatedParts[0]
   } else if (translatedParts.length === 2) {
     // 两个名称：国家,州/城市
     countryName = translatedParts[0]
     cityName = translatedParts[1]
     stateName = translatedParts[1]
-    searchQuery = translatedParts[1] // 优先搜索城市/州
   } else if (translatedParts.length >= 3) {
     // 三个或更多：国家,州,城市
     countryName = translatedParts[0]
     stateName = translatedParts[1]
     cityName = translatedParts[2]
-    searchQuery = translatedParts[2] // 优先搜索城市
   }
 
-  // 搜索匹配的城市
+  // 搜索匹配的城市 - 使用精确层级匹配
   const candidates = cities.filter(city => {
     const lowerCityName = city.name.toLowerCase()
     const lowerCountryName = city.country_name.toLowerCase()
     const lowerStateName = city.state_name.toLowerCase()
-    const lowerSearchQuery = searchQuery.toLowerCase()
+    const lowerCityFilter = cityName.toLowerCase()
     const lowerCountryFilter = countryName.toLowerCase()
     const lowerStateFilter = stateName.toLowerCase()
 
-    // 优先精确匹配城市名
-    const cityMatch = lowerCityName.includes(lowerSearchQuery) ||
-                      lowerSearchQuery.includes(lowerCityName)
+    // 精确匹配：使用 === 而不是 includes
+    // 如果需要模糊匹配，只在名称开头匹配 (startsWith)
+    const cityMatch = lowerCityFilter &&
+      (lowerCityName === lowerCityFilter || lowerCityName.startsWith(lowerCityFilter))
 
-    // 州/省匹配
-    const stateMatch = lowerStateName.includes(lowerStateFilter) ||
-                       lowerStateFilter.includes(lowerStateName)
+    const stateMatch = lowerStateFilter &&
+      (lowerStateName === lowerStateFilter || lowerStateName.startsWith(lowerStateFilter))
 
-    // 国家匹配
-    const countryMatch = lowerCountryName.includes(lowerCountryFilter) ||
-                         lowerCountryFilter.includes(lowerCountryName)
+    const countryMatch = lowerCountryFilter &&
+      (lowerCountryName === lowerCountryFilter || lowerCountryName.startsWith(lowerCountryFilter))
 
-    // 组合匹配逻辑
-    if (cityName && stateName && countryName) {
-      return cityMatch && stateMatch && countryMatch
-    } else if (cityName && countryName) {
-      return cityMatch && countryMatch
-    } else if (stateName && countryName) {
-      return stateMatch && countryMatch
+    // 组合匹配逻辑 - 按层级结构匹配
+    if (translatedParts.length === 3) {
+      // 国家,州省,城市：三者都必须匹配
+      return countryMatch && stateMatch && cityMatch
+    } else if (translatedParts.length === 2) {
+      // 国家,州省/城市：国家必须匹配，州或城市匹配
+      return countryMatch && (stateMatch || cityMatch)
     } else {
-      // 单个搜索词：匹配任何字段
-      return cityMatch || stateMatch || countryMatch
+      // 单个名称：只匹配国家（返回该国家的首都或主要城市）
+      return countryMatch
     }
   })
 
