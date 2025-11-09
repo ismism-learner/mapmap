@@ -215,7 +215,8 @@ function MarkerConnector({
         <Html
           position={[dollarPosition.x, dollarPosition.y, dollarPosition.z]}
           center
-          distanceFactor={isFlat ? 1 : 0.5}
+          transform
+          sprite
           style={{
             pointerEvents: 'none',
             zIndex: 50,
@@ -225,9 +226,9 @@ function MarkerConnector({
           <div
             style={{
               color: color,
-              fontSize: '20px',
+              fontSize: '36px',
               fontWeight: 'bold',
-              textShadow: '0 0 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 255, 255, 0.6)',
+              textShadow: '0 0 6px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 255, 255, 0.8)',
               userSelect: 'none',
               animation: 'pulse 1s ease-in-out infinite',
             }}
@@ -251,7 +252,8 @@ function MarkerConnector({
           position={[labelPosition.x, labelPosition.y, labelPosition.z]}
           center
           occlude={globeRef ? [globeRef] : undefined}
-          distanceFactor={isFlat ? 1 : 0.5}
+          transform
+          sprite
           style={{
             pointerEvents: 'auto',
             zIndex: 100,
@@ -324,7 +326,8 @@ function MarkerConnector({
           position={[labelPosition.x, labelPosition.y, labelPosition.z]}
           center
           occlude={globeRef ? [globeRef] : undefined}
-          distanceFactor={isFlat ? 1 : 0.5}
+          transform
+          sprite
           style={{
             pointerEvents: hovered && connection.eventInfo ? 'auto' : 'none',
             zIndex: hovered && connection.eventInfo ? 10000 : 10,
@@ -335,9 +338,9 @@ function MarkerConnector({
             style={{
               background: hovered && connection.eventInfo ? 'rgba(0, 0, 0, 0.92)' : 'rgba(0, 0, 0, 0.85)',
               color: 'white',
-              padding: hovered && connection.eventInfo ? '10px 14px' : '2px 6px',
-              borderRadius: hovered && connection.eventInfo ? '8px' : '3px',
-              fontSize: '8px',
+              padding: hovered && connection.eventInfo ? '10px 14px' : '3px 8px',
+              borderRadius: hovered && connection.eventInfo ? '8px' : '4px',
+              fontSize: '12px',
               fontWeight: '500',
               whiteSpace: 'nowrap',
               border: hovered && connection.eventInfo ? '2px solid #00ffff' : '1px solid rgba(0, 255, 255, 0.3)',
