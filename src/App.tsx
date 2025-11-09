@@ -151,7 +151,8 @@ function App() {
 
     // 更新最后一个标记（用于自动连接）
     setLastMarker(newMarker)
-    setSelectedMarker(newMarker)
+    // 不再自动打开编辑面板，让用户点击图钉后再打开
+    // setSelectedMarker(newMarker)
   }
 
   // 点击自定义标记
