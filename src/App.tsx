@@ -515,6 +515,20 @@ function App() {
         }
       }
 
+      // 处理图片URLs
+      const images = (gm.imageUrls || []).map((url, index) => ({
+        id: generateId(),
+        url: url,
+        alt: `图片 ${index + 1}`
+      }))
+
+      // 处理链接URLs
+      const links = (gm.linkUrls || []).map((url, index) => ({
+        id: generateId(),
+        url: url,
+        text: `链接 ${index + 1}`
+      }))
+
       newMarkers.push({
         id: generateId(),
         latitude: gm.latitude,
@@ -522,8 +536,8 @@ function App() {
         info: {
           title: videoInfo?.title || gm.title,
           description: gm.description,
-          links: [],
-          images: [],
+          links: links,
+          images: images,
           videoInfo: videoInfo || undefined
         },
         createdAt: Date.now()
