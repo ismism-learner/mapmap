@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
-import { Mesh } from 'three'
+import { useState, useMemo, useRef } from 'react'
+import { Mesh, Vector3 } from 'three'
 import { Html } from '@react-three/drei'
+import { useThree, useFrame } from '@react-three/fiber'
 import { lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
 
 interface PushpinProps {
@@ -48,9 +49,14 @@ function Pushpin({
   labelOffset: _labelOffset = { x: 0, y: 0 },
   onLabelDrag: _onLabelDrag,
   videoInfo,
-  fontSize = 20
+  fontSize = 28
 }: PushpinProps) {
   const [hovered, setHovered] = useState(false)
+  const [labelOpacity, setLabelOpacity] = useState(1)
+  const [isVisible, setIsVisible] = useState(true)
+  const { camera } = useThree()
+  const positionRef = useRef(new Vector3())
+  const normalRef = useRef(new Vector3())
 
   // 根据模式计算位置
   const position = useMemo(() => {
@@ -62,6 +68,53 @@ function Pushpin({
   }, [isFlat, longitude, latitude, radius, mapWidth, mapHeight])
 
   const { x, y, z } = position
+
+  // 更新位置引用和法线向量
+  useMemo(() => {
+    positionRef.current.set(x, y, z)
+    // 法线向量：从地球中心（0,0,0）指向图钉位置
+    normalRef.current.copy(positionRef.current).normalize()
+  }, [x, y, z])
+
+  // 基于相机距离和视角动态调整标签透明度和可见性
+  useFrame(() => {
+    const distance = camera.position.distanceTo(positionRef.current)
+
+    // 背面剔除：检测图钉是否在地球背面
+    if (!isFlat) {
+      // 计算从图钉到相机的方向向量
+      const toCamera = new Vector3().subVectors(camera.position, positionRef.current).normalize()
+      // 点积：如果 < 0，说明图钉背向相机（在地球背面）
+      const dotProduct = normalRef.current.dot(toCamera)
+
+      const newVisibility = dotProduct > 0.1 // 添加一点阈值避免边缘闪烁
+      if (newVisibility !== isVisible) {
+        setIsVisible(newVisibility)
+      }
+
+      // 如果在背面，直接返回，不更新透明度
+      if (!newVisibility) {
+        return
+      }
+    }
+
+    // 透明度渐变区间（只在正面时计算）
+    const farThreshold = 3.5   // 距离大于此值时完全可见
+    const nearThreshold = 1.8  // 距离小于此值时完全透明
+
+    let opacity = 1
+    if (distance < nearThreshold) {
+      opacity = 0
+    } else if (distance < farThreshold) {
+      // 线性插值：从近到远，透明度从0到1
+      opacity = (distance - nearThreshold) / (farThreshold - nearThreshold)
+    }
+
+    // 只在变化较大时更新状态，避免频繁渲染
+    if (Math.abs(opacity - labelOpacity) > 0.01) {
+      setLabelOpacity(opacity)
+    }
+  })
 
   // 简化的SVG图钉配置
   const pinConfig = {
@@ -79,6 +132,11 @@ function Pushpin({
   }
 
   const svgSize = (pinConfig.outerRadius + pinConfig.strokeWidth) * 2
+
+  // 如果在背面（球形模式）或不可见，则不渲染
+  if (!isVisible && !isFlat) {
+    return null
+  }
 
   return (
     <Html
@@ -140,7 +198,7 @@ function Pushpin({
           />
         </svg>
 
-        {/* 标签 - 永久显示（无论是否有视频） */}
+        {/* 标签 - 基于相机距离动态调整透明度 */}
         {label && (
           <div
             style={{
@@ -156,6 +214,8 @@ function Pushpin({
               border: '1px solid rgba(255,255,255,0.2)',
               pointerEvents: 'none',
               userSelect: 'none',
+              opacity: labelOpacity,
+              transition: 'opacity 0.3s ease-out',
             }}
           >
             {label}

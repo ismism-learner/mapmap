@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import * as THREE from 'three'
 import { Line } from '@react-three/drei'
-import { loadShapefile, lonLatToVector3, lonLatToFlatPosition } from '../utils/geoUtils'
+import { loadShapefile, lonLatToVector3, lonLatToFlatPosition, vector3ToLonLat } from '../utils/geoUtils'
 
 interface InteractiveBoundaryProps {
   shpPath: string
@@ -12,12 +12,19 @@ interface InteractiveBoundaryProps {
   isFlat?: boolean
   mapWidth?: number
   mapHeight?: number
+  onCountryClick?: (countryInfo: { id: number; name: string; latitude: number; longitude: number }) => void
+  selectedCountries?: number[]
+  paintMode?: boolean
+  selectedColor?: string
+  countryColors?: Map<number, string>
+  onCountryPaint?: (countryId: number, color: string) => void
 }
 
 interface BoundaryFeature {
   id: number
   name?: string
   lines: THREE.Vector3[][]
+  center: { latitude: number; longitude: number }
 }
 
 /**
@@ -25,6 +32,7 @@ interface BoundaryFeature {
  * - 支持鼠标悬停高亮
  * - 内部发光效果（Inner Glow）
  * - 柔和的过渡动画
+ * - 点击国家创建图钉并连接
  */
 function InteractiveBoundary({
   shpPath,
@@ -34,12 +42,38 @@ function InteractiveBoundary({
   radius = 1.005,
   isFlat = false,
   mapWidth = 4,
-  mapHeight = 2
+  mapHeight = 2,
+  onCountryClick,
+  selectedCountries = [],
+  paintMode = false,
+  selectedColor = '#FF6B6B',
+  countryColors = new Map(),
+  onCountryPaint
 }: InteractiveBoundaryProps) {
   const [features, setFeatures] = useState<BoundaryFeature[]>([])
   const [loading, setLoading] = useState(true)
   const [hoveredId, setHoveredId] = useState<number | null>(null)
   const groupRef = useRef<THREE.Group>(null)
+
+  // 计算多边形中心点（经纬度）
+  const calculateCenter = (lines: THREE.Vector3[][]): { latitude: number; longitude: number } => {
+    if (lines.length === 0 || lines[0].length === 0) {
+      return { latitude: 0, longitude: 0 }
+    }
+
+    // 获取所有点
+    const allPoints: THREE.Vector3[] = []
+    lines.forEach(line => allPoints.push(...line))
+
+    // 计算平均位置
+    const avgPosition = new THREE.Vector3()
+    allPoints.forEach(point => avgPosition.add(point))
+    avgPosition.divideScalar(allPoints.length)
+
+    // 转换为经纬度
+    const { latitude, longitude } = vector3ToLonLat(avgPosition.x, avgPosition.y, avgPosition.z)
+    return { latitude, longitude }
+  }
 
   useEffect(() => {
     if (!visible) {
@@ -91,10 +125,12 @@ function InteractiveBoundary({
           }
 
           if (lines.length > 0) {
+            const center = calculateCenter(lines)
             featuresList.push({
               id: idx,
               name: feature.properties?.name || feature.properties?.NAME || `区域 ${idx}`,
-              lines
+              lines,
+              center
             })
           }
         })
@@ -111,15 +147,24 @@ function InteractiveBoundary({
     loadBoundaries()
   }, [shpPath, visible, radius, isFlat, mapWidth, mapHeight])
 
-  const handleClick = (id: number, name?: string) => {
-    // 如果点击的是已选中的区域，则取消选中
-    if (hoveredId === id) {
-      setHoveredId(null)
-      console.log(`🖱️ 取消选择: ${name}`)
-    } else {
-      // 否则选中新区域，并取消之前的选择
-      setHoveredId(id)
-      console.log(`🖱️ 点击选中: ${name}`)
+  const handleClick = (feature: BoundaryFeature) => {
+    console.log(`🖱️ 点击国家: ${feature.name}`, feature.center)
+
+    // 如果在上色模式，执行上色操作
+    if (paintMode && onCountryPaint) {
+      onCountryPaint(feature.id, selectedColor)
+      console.log(`🎨 上色: ${feature.name} -> ${selectedColor}`)
+      return
+    }
+
+    // 否则执行创建图钉操作
+    if (onCountryClick) {
+      onCountryClick({
+        id: feature.id,
+        name: feature.name || `区域 ${feature.id}`,
+        latitude: feature.center.latitude,
+        longitude: feature.center.longitude
+      })
     }
   }
 
@@ -130,28 +175,111 @@ function InteractiveBoundary({
   return (
     <group ref={groupRef} name="interactive-boundary-layer">
       {features.map((feature) => {
+        const isSelected = selectedCountries.includes(feature.id)
         const isHovered = hoveredId === feature.id
+        const fillColor = countryColors.get(feature.id)
 
         return (
           <group key={`feature-${feature.id}`}>
+            {/* 国家填充（如果已上色） */}
+            {fillColor && feature.lines.length > 0 && feature.lines[0].length > 2 && (
+              <>
+                {isFlat ? (
+                  // 平面模式填充
+                  <mesh
+                    position={[0, 0, 0.0005]}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleClick(feature)
+                    }}
+                  >
+                    <shapeGeometry
+                      args={[
+                        new THREE.Shape(
+                          feature.lines[0].map(p => new THREE.Vector2(p.x, p.y))
+                        )
+                      ]}
+                    />
+                    <meshBasicMaterial
+                      color={fillColor}
+                      transparent
+                      opacity={0.6}
+                      side={THREE.DoubleSide}
+                    />
+                  </mesh>
+                ) : (
+                  // 球形模式填充（使用多边形三角化）
+                  feature.lines.map((line, idx) => {
+                    if (line.length < 3) return null
+
+                    // 创建填充几何体
+                    const shape = new THREE.Shape()
+
+                    // 将3D点投影到2D平面进行三角化
+                    const vertices: number[] = []
+                    line.forEach(point => {
+                      vertices.push(point.x, point.y, point.z)
+                    })
+
+                    return (
+                      <mesh
+                        key={`fill-${feature.id}-${idx}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleClick(feature)
+                        }}
+                      >
+                        <bufferGeometry>
+                          <bufferAttribute
+                            attach="attributes-position"
+                            count={line.length}
+                            array={new Float32Array(vertices)}
+                            itemSize={3}
+                          />
+                        </bufferGeometry>
+                        <meshBasicMaterial
+                          color={fillColor}
+                          transparent
+                          opacity={0.6}
+                          side={THREE.DoubleSide}
+                        />
+                      </mesh>
+                    )
+                  })
+                )}
+              </>
+            )}
+
             {/* 主边界线 */}
             {feature.lines.map((points, lineIdx) => (
               <Line
                 key={`line-${feature.id}-${lineIdx}`}
                 points={points}
-                color={isHovered ? '#FFFFFF' : color}
-                lineWidth={isHovered ? lineWidth * 1.8 : lineWidth}
+                color={isSelected ? '#00FFFF' : (isHovered ? '#FFFFFF' : color)}
+                lineWidth={isSelected ? lineWidth * 2.5 : (isHovered ? lineWidth * 1.8 : lineWidth)}
                 transparent
-                opacity={isHovered ? 1 : 0.7}
+                opacity={isSelected ? 1 : (isHovered ? 0.9 : 0.7)}
+                onPointerOver={(e) => {
+                  e.stopPropagation()
+                  setHoveredId(feature.id)
+                }}
+                onPointerOut={(e) => {
+                  e.stopPropagation()
+                  setHoveredId(null)
+                }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleClick(feature)
+                }}
               />
             ))}
 
             {/* 平面模式：简化的点击检测区域 */}
-            {isFlat && feature.lines.length > 0 && feature.lines[0].length > 2 && (
+            {!fillColor && isFlat && feature.lines.length > 0 && feature.lines[0].length > 2 && (
               <mesh
                 onClick={(e) => {
                   e.stopPropagation()
-                  handleClick(feature.id, feature.name)
+                  handleClick(feature)
                 }}
                 position={[0, 0, 0.001]}
                 visible={false}

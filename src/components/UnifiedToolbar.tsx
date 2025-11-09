@@ -11,6 +11,7 @@ interface UnifiedToolbarProps {
   onToggleImageUpload: () => void
   onToggleAdminPanel: () => void
   onToggleFontSize: () => void
+  onTogglePaintMode: () => void
   autoConnectEnabled: boolean
   manualConnectEnabled: boolean
   eventInputOpen: boolean
@@ -19,6 +20,9 @@ interface UnifiedToolbarProps {
   imageUploadOpen: boolean
   adminPanelOpen: boolean
   fontSizeOpen: boolean
+  paintModeEnabled: boolean
+  selectedColor: string
+  onColorChange: (color: string) => void
 }
 
 /**
@@ -35,6 +39,7 @@ function UnifiedToolbar({
   onToggleImageUpload,
   onToggleAdminPanel,
   onToggleFontSize,
+  onTogglePaintMode,
   autoConnectEnabled,
   manualConnectEnabled,
   eventInputOpen,
@@ -42,9 +47,13 @@ function UnifiedToolbar({
   managementOpen,
   imageUploadOpen,
   adminPanelOpen,
-  fontSizeOpen
+  fontSizeOpen,
+  paintModeEnabled,
+  selectedColor,
+  onColorChange
 }: UnifiedToolbarProps) {
   const [expanded, setExpanded] = useState(true)
+  const [showColorPicker, setShowColorPicker] = useState(false)
 
   if (!isAdminMode) return null
 
@@ -173,6 +182,59 @@ function UnifiedToolbar({
               <line x1="12" y1="4" x2="12" y2="20" />
             </svg>
           </button>
+
+          {/* 油漆桶 - 国家上色 */}
+          <button
+            className={`toolbar-btn ${paintModeEnabled ? 'active' : ''}`}
+            onClick={() => {
+              onTogglePaintMode()
+              setShowColorPicker(!showColorPicker)
+            }}
+            title="国家上色"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+              <path d="M12 18a6 6 0 0 0-6-6" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* 颜色选择器 */}
+      {paintModeEnabled && showColorPicker && (
+        <div className="color-picker-panel">
+          <div className="color-picker-header">
+            <span>选择颜色</span>
+            <button
+              className="close-btn"
+              onClick={() => setShowColorPicker(false)}
+              title="关闭"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="color-picker-body">
+            <input
+              type="color"
+              value={selectedColor}
+              onChange={(e) => onColorChange(e.target.value)}
+              className="color-input"
+            />
+            <div className="color-presets">
+              {['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'].map(color => (
+                <button
+                  key={color}
+                  className={`color-preset ${selectedColor === color ? 'selected' : ''}`}
+                  style={{ backgroundColor: color }}
+                  onClick={() => onColorChange(color)}
+                  title={color}
+                />
+              ))}
+            </div>
+            <div className="color-value">
+              当前颜色: {selectedColor}
+            </div>
+          </div>
         </div>
       )}
     </div>

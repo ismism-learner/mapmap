@@ -10,11 +10,14 @@ import Marker from './Marker'
 import Pushpin from './Pushpin'
 import OptimizedMarkers from './OptimizedMarkers'
 import MarkerConnector from './MarkerConnector'
+import ConnectorCalculator from './ConnectorCalculator'
 import { LayerConfig } from './LayerControl'
 import { City } from '../utils/cityUtils'
 import { CustomMarker, MarkerConnection } from '../types/customMarker'
 import { useCameraControls } from '../hooks/useCameraControls'
 import { vector3ToLonLat } from '../utils/geoUtils'
+import { AnchoredEvent } from './AnchoredEventPanel'
+import { ConnectorLine } from './DynamicConnector'
 
 interface SceneProps {
   layers: LayerConfig[]
@@ -35,6 +38,14 @@ interface SceneProps {
   onConnectionLabelChange?: (connectionId: string, newLabel: string) => void
   labelFontSize?: number
   dollarFontSize?: number
+  onCountryClick?: (countryInfo: { id: number; name: string; latitude: number; longitude: number }) => void
+  selectedCountries?: number[]
+  paintMode?: boolean
+  selectedColor?: string
+  countryColors?: Map<number, string>
+  onCountryPaint?: (countryId: number, color: string) => void
+  anchoredEvents?: AnchoredEvent[]
+  onConnectorLinesUpdate?: (lines: ConnectorLine[]) => void
 }
 
 function Scene({
@@ -55,7 +66,15 @@ function Scene({
   onLabelDrag,
   onConnectionLabelChange,
   labelFontSize = 20,
-  dollarFontSize = 25
+  dollarFontSize = 25,
+  onCountryClick,
+  selectedCountries = [],
+  paintMode = false,
+  selectedColor = '#FF6B6B',
+  countryColors = new Map(),
+  onCountryPaint,
+  anchoredEvents = [],
+  onConnectorLinesUpdate
 }: SceneProps) {
   const { flyTo } = useCameraControls()
   const globeRef = useRef<Mesh>(null)
@@ -135,6 +154,12 @@ function Scene({
           color={layer.color}
           visible={layer.visible}
           isFlat={isFlatMode}
+          onCountryClick={onCountryClick}
+          selectedCountries={selectedCountries}
+          paintMode={paintMode}
+          selectedColor={selectedColor}
+          countryColors={countryColors}
+          onCountryPaint={onCountryPaint}
         />
       ))}
 
@@ -216,6 +241,15 @@ function Scene({
         fade
         speed={1}
       />
+
+      {/* 锚定事件连接线坐标计算器 */}
+      {anchoredEvents.length > 0 && onConnectorLinesUpdate && (
+        <ConnectorCalculator
+          events={anchoredEvents}
+          onUpdate={onConnectorLinesUpdate}
+          isFlatMode={isFlatMode}
+        />
+      )}
 
       {/* 控制器 - 根据模式选择 */}
       {isFlatMode ? (

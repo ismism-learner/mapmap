@@ -15,6 +15,8 @@ import ManagementPanel from './components/ManagementPanel'
 import UnifiedToolbar from './components/UnifiedToolbar'
 import ImageUpload from './components/ImageUpload'
 import FontSizeControl from './components/FontSizeControl'
+import AnchoredEventPanel, { AnchoredEvent } from './components/AnchoredEventPanel'
+import DynamicConnector, { ConnectorLine } from './components/DynamicConnector'
 import { City, loadCities } from './utils/cityUtils'
 import { TextureConfig, loadTextures } from './types/texture'
 import {
@@ -55,6 +57,20 @@ function App() {
   const [autoConnect, setAutoConnect] = useState(true) // 自动连接模式（默认开启）
   const [manualConnectMode, setManualConnectMode] = useState(false) // 手动连接模式
   const [firstMarkerForConnect, setFirstMarkerForConnect] = useState<CustomMarker | null>(null)
+
+  // 国家选择状态
+  const [selectedCountries, setSelectedCountries] = useState<number[]>([])
+  const [countryMarkers, setCountryMarkers] = useState<Map<number, string>>(new Map()) // 国家ID -> 图钉ID
+
+  // 国家上色状态
+  const [paintMode, setPaintMode] = useState(false) // 上色模式
+  const [selectedColor, setSelectedColor] = useState('#FF6B6B') // 选中的颜色
+  const [countryColors, setCountryColors] = useState<Map<number, string>>(new Map()) // 国家ID -> 颜色
+
+  // 锚定事件面板状态
+  const [anchoredEvents, setAnchoredEvents] = useState<AnchoredEvent[]>([])
+  const [connectorLines, setConnectorLines] = useState<ConnectorLine[]>([])
+  const [nextEventSide, setNextEventSide] = useState<'left' | 'right'>('left') // 下一个事件放置的侧边
 
   // 光照模式
   const [realisticLighting, setRealisticLighting] = useState(false) // 真实光照模式（默认关闭）
@@ -190,6 +206,110 @@ function App() {
     // setSelectedMarker(newMarker)
   }
 
+  // 点击国家创建图钉并连接
+  const handleCountryClick = (countryInfo: { id: number; name: string; latitude: number; longitude: number }) => {
+    // 只有管理员模式才能创建标记
+    if (!isAdminMode) {
+      console.log('用户模式下无法创建标记')
+      return
+    }
+
+    console.log('🌍 点击国家:', countryInfo)
+
+    // 检查这个国家是否已经有图钉
+    const existingMarkerId = countryMarkers.get(countryInfo.id)
+
+    if (existingMarkerId) {
+      // 如果已经有图钉，从选择列表中移除该国家
+      setSelectedCountries(prev => prev.filter(id => id !== countryInfo.id))
+
+      // 删除该国家的图钉
+      setCustomMarkers(prev => prev.filter(m => m.id !== existingMarkerId))
+
+      // 删除相关的连接线
+      setConnections(prev => prev.filter(c =>
+        c.fromMarkerId !== existingMarkerId && c.toMarkerId !== existingMarkerId
+      ))
+
+      // 从映射中移除
+      setCountryMarkers(prev => {
+        const newMap = new Map(prev)
+        newMap.delete(countryInfo.id)
+        return newMap
+      })
+
+      console.log(`🗑️ 移除国家 ${countryInfo.name} 的图钉`)
+      return
+    }
+
+    // 创建新图钉
+    const newMarker: CustomMarker = {
+      id: generateId(),
+      latitude: countryInfo.latitude,
+      longitude: countryInfo.longitude,
+      info: {
+        title: countryInfo.name,
+        description: `国家/地区：${countryInfo.name}`,
+        links: [],
+        images: []
+      },
+      createdAt: Date.now()
+    }
+
+    setCustomMarkers(prev => [...prev, newMarker])
+
+    // 添加到映射
+    setCountryMarkers(prev => {
+      const newMap = new Map(prev)
+      newMap.set(countryInfo.id, newMarker.id)
+      return newMap
+    })
+
+    // 更新选中的国家列表（最多保留2个）
+    setSelectedCountries(prev => {
+      const newSelected = [...prev, countryInfo.id]
+      if (newSelected.length > 2) {
+        // 如果超过2个，移除第一个
+        const removedCountryId = newSelected.shift()!
+        const removedMarkerId = countryMarkers.get(removedCountryId)
+
+        // 删除第一个国家的图钉
+        if (removedMarkerId) {
+          setCustomMarkers(prevMarkers => prevMarkers.filter(m => m.id !== removedMarkerId))
+          setConnections(prevConns => prevConns.filter(c =>
+            c.fromMarkerId !== removedMarkerId && c.toMarkerId !== removedMarkerId
+          ))
+        }
+
+        // 从映射中移除
+        setCountryMarkers(prevMap => {
+          const newMap = new Map(prevMap)
+          newMap.delete(removedCountryId)
+          return newMap
+        })
+      }
+      return newSelected.slice(-2) // 确保最多2个
+    })
+
+    // 如果这是第二个国家，自动创建连接线
+    if (selectedCountries.length === 1) {
+      const firstCountryId = selectedCountries[0]
+      const firstMarkerId = countryMarkers.get(firstCountryId)
+
+      if (firstMarkerId) {
+        const newConnection: MarkerConnection = {
+          id: generateId(),
+          fromMarkerId: firstMarkerId,
+          toMarkerId: newMarker.id
+        }
+        setConnections(prev => [...prev, newConnection])
+        console.log(`🔗 创建连接: ${firstMarkerId} -> ${newMarker.id}`)
+      }
+    }
+
+    console.log(`📍 在国家 ${countryInfo.name} 创建图钉`)
+  }
+
   // 点击自定义标记
   const handleClickMarker = (marker: CustomMarker) => {
     // 如果在手动连接模式下
@@ -219,10 +339,48 @@ function App() {
         setFirstMarkerForConnect(null)
       }
     } else {
-      // 普通模式：打开信息面板
-      setSelectedMarker(marker)
+      // 普通模式：激活锚定事件面板
+      handleActivateEvent(marker)
       setSelectedCity(null) // 关闭城市信息卡
     }
+  }
+
+  // 激活锚定事件
+  const handleActivateEvent = (marker: CustomMarker) => {
+    // 检查是否已经激活
+    const existingEvent = anchoredEvents.find(e => e.marker.id === marker.id)
+    if (existingEvent) {
+      // 如果已激活，则停用
+      handleDeactivateEvent(existingEvent.id)
+      return
+    }
+
+    // 创建新的锚定事件
+    const newEvent: AnchoredEvent = {
+      id: `event-${marker.id}-${Date.now()}`,
+      marker,
+      side: nextEventSide,
+    }
+
+    setAnchoredEvents(prev => [...prev, newEvent])
+
+    // 切换下一个事件的侧边
+    setNextEventSide(prev => prev === 'left' ? 'right' : 'left')
+  }
+
+  // 停用锚定事件
+  const handleDeactivateEvent = (eventId: string) => {
+    setAnchoredEvents(prev => prev.filter(e => e.id !== eventId))
+  }
+
+  // 更新连接线坐标
+  const handleConnectorLinesUpdate = (lines: ConnectorLine[]) => {
+    setConnectorLines(lines)
+  }
+
+  // 编辑事件详情
+  const handleEditEventDetails = (marker: CustomMarker) => {
+    setSelectedMarker(marker)
   }
 
   // 保存标记信息
@@ -340,6 +498,26 @@ function App() {
     if (!newManualConnect) {
       setSelectedMarker(null) // 退出手动连接模式时关闭信息面板
     }
+  }
+
+  // 切换上色模式
+  const handleTogglePaintMode = () => {
+    setPaintMode(!paintMode)
+  }
+
+  // 更改选中的颜色
+  const handleColorChange = (color: string) => {
+    setSelectedColor(color)
+  }
+
+  // 国家上色
+  const handleCountryPaint = (countryId: number, color: string) => {
+    setCountryColors(prev => {
+      const newMap = new Map(prev)
+      newMap.set(countryId, color)
+      return newMap
+    })
+    console.log(`🎨 国家 ${countryId} 上色为 ${color}`)
   }
 
   // 批量创建事件
@@ -532,8 +710,35 @@ function App() {
           onConnectionLabelChange={handleConnectionLabelChange}
           labelFontSize={labelFontSize}
           dollarFontSize={dollarFontSize}
+          onCountryClick={handleCountryClick}
+          selectedCountries={selectedCountries}
+          paintMode={paintMode}
+          selectedColor={selectedColor}
+          countryColors={countryColors}
+          onCountryPaint={handleCountryPaint}
+          anchoredEvents={anchoredEvents}
+          onConnectorLinesUpdate={handleConnectorLinesUpdate}
         />
       </Canvas>
+
+      {/* 动态连接线覆盖层 */}
+      <DynamicConnector lines={connectorLines} />
+
+      {/* 锚定事件面板 - 左侧 */}
+      <AnchoredEventPanel
+        events={anchoredEvents}
+        side="left"
+        onClose={handleDeactivateEvent}
+        onEdit={handleEditEventDetails}
+      />
+
+      {/* 锚定事件面板 - 右侧 */}
+      <AnchoredEventPanel
+        events={anchoredEvents}
+        side="right"
+        onClose={handleDeactivateEvent}
+        onEdit={handleEditEventDetails}
+      />
 
       {/* 性能监控面板 - 在Canvas外部 */}
       <PerformanceMonitor />
@@ -559,14 +764,18 @@ function App() {
           onToggleImageUpload={handleToggleImageUpload}
           onToggleAdminPanel={handleToggleAdminPanel}
           onToggleFontSize={handleToggleFontSize}
+          onTogglePaintMode={handleTogglePaintMode}
           autoConnectEnabled={autoConnect}
           manualConnectEnabled={manualConnectMode}
+          paintModeEnabled={paintMode}
           eventInputOpen={eventInputOpen}
           layerControlOpen={layerControlOpen}
           managementOpen={managementOpen}
           imageUploadOpen={imageUploadOpen}
           adminPanelOpen={adminPanelOpen}
           fontSizeOpen={fontSizeOpen}
+          selectedColor={selectedColor}
+          onColorChange={handleColorChange}
         />
       )}
 
