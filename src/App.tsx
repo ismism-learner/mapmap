@@ -306,39 +306,16 @@ function App() {
     }
   }
 
-  // 激活锚定事件
+  // 激活锚定事件（允许同一图钉创建多个事件卡）
   const handleActivateEvent = (marker: CustomMarker) => {
-    console.log(`🎯 点击图钉: ${marker.id}`)
-
-    // 检查是否已经激活
-    const existingEvent = anchoredEvents.find(e => e.markerId === marker.id)
-
-    if (existingEvent) {
-      // 如果已激活，则停用（toggle行为）
-      console.log(`🔄 图钉已激活，执行停用: ${existingEvent.id}`)
-      handleDeactivateEvent(existingEvent.id)
-      return
+    // 创建新的锚定事件（只保存标记ID）
+    const newEvent: AnchoredEvent = {
+      id: `event-${marker.id}-${Date.now()}`,
+      markerId: marker.id,  // 只保存ID，不保存整个对象
+      side: nextEventSide,
     }
 
-    // 双重检查：确保不会重复创建
-    setAnchoredEvents(prev => {
-      // 再次检查是否已存在（防止快速点击导致的重复创建）
-      const alreadyExists = prev.find(e => e.markerId === marker.id)
-      if (alreadyExists) {
-        console.log(`⚠️ 检测到重复，跳过创建`)
-        return prev
-      }
-
-      // 创建新的锚定事件（只保存标记ID）
-      const newEvent: AnchoredEvent = {
-        id: `event-${marker.id}-${Date.now()}`,
-        markerId: marker.id,  // 只保存ID，不保存整个对象
-        side: nextEventSide,
-      }
-
-      console.log(`✅ 创建新事件卡: ${newEvent.id}`)
-      return [...prev, newEvent]
-    })
+    setAnchoredEvents(prev => [...prev, newEvent])
 
     // 切换下一个事件的侧边
     setNextEventSide(prev => prev === 'left' ? 'right' : 'left')
