@@ -14,6 +14,10 @@ interface InteractiveBoundaryProps {
   mapHeight?: number
   onCountryClick?: (countryInfo: { id: number; name: string; latitude: number; longitude: number }) => void
   selectedCountries?: number[]
+  paintMode?: boolean
+  selectedColor?: string
+  countryColors?: Map<number, string>
+  onCountryPaint?: (countryId: number, color: string) => void
 }
 
 interface BoundaryFeature {
@@ -40,7 +44,11 @@ function InteractiveBoundary({
   mapWidth = 4,
   mapHeight = 2,
   onCountryClick,
-  selectedCountries = []
+  selectedCountries = [],
+  paintMode = false,
+  selectedColor = '#FF6B6B',
+  countryColors = new Map(),
+  onCountryPaint
 }: InteractiveBoundaryProps) {
   const [features, setFeatures] = useState<BoundaryFeature[]>([])
   const [loading, setLoading] = useState(true)
@@ -142,6 +150,14 @@ function InteractiveBoundary({
   const handleClick = (feature: BoundaryFeature) => {
     console.log(`🖱️ 点击国家: ${feature.name}`, feature.center)
 
+    // 如果在上色模式，执行上色操作
+    if (paintMode && onCountryPaint) {
+      onCountryPaint(feature.id, selectedColor)
+      console.log(`🎨 上色: ${feature.name} -> ${selectedColor}`)
+      return
+    }
+
+    // 否则执行创建图钉操作
     if (onCountryClick) {
       onCountryClick({
         id: feature.id,
@@ -161,9 +177,79 @@ function InteractiveBoundary({
       {features.map((feature) => {
         const isSelected = selectedCountries.includes(feature.id)
         const isHovered = hoveredId === feature.id
+        const fillColor = countryColors.get(feature.id)
 
         return (
           <group key={`feature-${feature.id}`}>
+            {/* 国家填充（如果已上色） */}
+            {fillColor && feature.lines.length > 0 && feature.lines[0].length > 2 && (
+              <>
+                {isFlat ? (
+                  // 平面模式填充
+                  <mesh
+                    position={[0, 0, 0.0005]}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleClick(feature)
+                    }}
+                  >
+                    <shapeGeometry
+                      args={[
+                        new THREE.Shape(
+                          feature.lines[0].map(p => new THREE.Vector2(p.x, p.y))
+                        )
+                      ]}
+                    />
+                    <meshBasicMaterial
+                      color={fillColor}
+                      transparent
+                      opacity={0.6}
+                      side={THREE.DoubleSide}
+                    />
+                  </mesh>
+                ) : (
+                  // 球形模式填充（使用多边形三角化）
+                  feature.lines.map((line, idx) => {
+                    if (line.length < 3) return null
+
+                    // 创建填充几何体
+                    const shape = new THREE.Shape()
+
+                    // 将3D点投影到2D平面进行三角化
+                    const vertices: number[] = []
+                    line.forEach(point => {
+                      vertices.push(point.x, point.y, point.z)
+                    })
+
+                    return (
+                      <mesh
+                        key={`fill-${feature.id}-${idx}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleClick(feature)
+                        }}
+                      >
+                        <bufferGeometry>
+                          <bufferAttribute
+                            attach="attributes-position"
+                            count={line.length}
+                            array={new Float32Array(vertices)}
+                            itemSize={3}
+                          />
+                        </bufferGeometry>
+                        <meshBasicMaterial
+                          color={fillColor}
+                          transparent
+                          opacity={0.6}
+                          side={THREE.DoubleSide}
+                        />
+                      </mesh>
+                    )
+                  })
+                )}
+              </>
+            )}
+
             {/* 主边界线 */}
             {feature.lines.map((points, lineIdx) => (
               <Line
@@ -189,7 +275,7 @@ function InteractiveBoundary({
             ))}
 
             {/* 平面模式：简化的点击检测区域 */}
-            {isFlat && feature.lines.length > 0 && feature.lines[0].length > 2 && (
+            {!fillColor && isFlat && feature.lines.length > 0 && feature.lines[0].length > 2 && (
               <mesh
                 onClick={(e) => {
                   e.stopPropagation()

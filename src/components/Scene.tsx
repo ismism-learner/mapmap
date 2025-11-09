@@ -37,6 +37,10 @@ interface SceneProps {
   dollarFontSize?: number
   onCountryClick?: (countryInfo: { id: number; name: string; latitude: number; longitude: number }) => void
   selectedCountries?: number[]
+  paintMode?: boolean
+  selectedColor?: string
+  countryColors?: Map<number, string>
+  onCountryPaint?: (countryId: number, color: string) => void
 }
 
 function Scene({
@@ -59,7 +63,11 @@ function Scene({
   labelFontSize = 20,
   dollarFontSize = 25,
   onCountryClick,
-  selectedCountries = []
+  selectedCountries = [],
+  paintMode = false,
+  selectedColor = '#FF6B6B',
+  countryColors = new Map(),
+  onCountryPaint
 }: SceneProps) {
   const { flyTo } = useCameraControls()
   const globeRef = useRef<Mesh>(null)
@@ -141,6 +149,10 @@ function Scene({
           isFlat={isFlatMode}
           onCountryClick={onCountryClick}
           selectedCountries={selectedCountries}
+          paintMode={paintMode}
+          selectedColor={selectedColor}
+          countryColors={countryColors}
+          onCountryPaint={onCountryPaint}
         />
       ))}
 

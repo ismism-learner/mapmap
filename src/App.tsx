@@ -60,6 +60,11 @@ function App() {
   const [selectedCountries, setSelectedCountries] = useState<number[]>([])
   const [countryMarkers, setCountryMarkers] = useState<Map<number, string>>(new Map()) // 国家ID -> 图钉ID
 
+  // 国家上色状态
+  const [paintMode, setPaintMode] = useState(false) // 上色模式
+  const [selectedColor, setSelectedColor] = useState('#FF6B6B') // 选中的颜色
+  const [countryColors, setCountryColors] = useState<Map<number, string>>(new Map()) // 国家ID -> 颜色
+
   // 光照模式
   const [realisticLighting, setRealisticLighting] = useState(false) // 真实光照模式（默认关闭）
 
@@ -450,6 +455,26 @@ function App() {
     }
   }
 
+  // 切换上色模式
+  const handleTogglePaintMode = () => {
+    setPaintMode(!paintMode)
+  }
+
+  // 更改选中的颜色
+  const handleColorChange = (color: string) => {
+    setSelectedColor(color)
+  }
+
+  // 国家上色
+  const handleCountryPaint = (countryId: number, color: string) => {
+    setCountryColors(prev => {
+      const newMap = new Map(prev)
+      newMap.set(countryId, color)
+      return newMap
+    })
+    console.log(`🎨 国家 ${countryId} 上色为 ${color}`)
+  }
+
   // 批量创建事件
   const handleCreateEvents = async (eventText: string) => {
     console.log('📝 开始批量创建事件...')
@@ -642,6 +667,10 @@ function App() {
           dollarFontSize={dollarFontSize}
           onCountryClick={handleCountryClick}
           selectedCountries={selectedCountries}
+          paintMode={paintMode}
+          selectedColor={selectedColor}
+          countryColors={countryColors}
+          onCountryPaint={handleCountryPaint}
         />
       </Canvas>
 
@@ -669,14 +698,18 @@ function App() {
           onToggleImageUpload={handleToggleImageUpload}
           onToggleAdminPanel={handleToggleAdminPanel}
           onToggleFontSize={handleToggleFontSize}
+          onTogglePaintMode={handleTogglePaintMode}
           autoConnectEnabled={autoConnect}
           manualConnectEnabled={manualConnectMode}
+          paintModeEnabled={paintMode}
           eventInputOpen={eventInputOpen}
           layerControlOpen={layerControlOpen}
           managementOpen={managementOpen}
           imageUploadOpen={imageUploadOpen}
           adminPanelOpen={adminPanelOpen}
           fontSizeOpen={fontSizeOpen}
+          selectedColor={selectedColor}
+          onColorChange={handleColorChange}
         />
       )}
 
