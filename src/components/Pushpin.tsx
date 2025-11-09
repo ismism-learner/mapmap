@@ -72,7 +72,7 @@ function Pushpin({
       occlude={globeRef ? [globeRef] : undefined}
       style={{
         transition: 'opacity 0.2s',
-        pointerEvents: 'auto',
+        pointerEvents: 'none',
         zIndex: 100,
       }}
       zIndexRange={[100, 0]}
@@ -88,6 +88,7 @@ function Pushpin({
           alignItems: 'center',
           transform: hovered ? 'scale(1.2)' : 'scale(1)',
           transition: 'transform 0.2s',
+          pointerEvents: 'auto',
         }}
       >
         {/* SVG图钉 */}
