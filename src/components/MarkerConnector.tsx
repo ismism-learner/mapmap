@@ -31,7 +31,7 @@ function MarkerConnector({
   connection,
   radius = 1.02,
   color = '#00ffff',
-  lineWidth = 2,
+  lineWidth = 4, // 增加线宽，方便点击
   isFlat = false,
   mapWidth = 4,
   mapHeight = 2,
@@ -108,9 +108,8 @@ function MarkerConnector({
     }
   }, [fromMarker, toMarker, radius, isFlat, mapWidth, mapHeight])
 
-  // 处理双击编辑
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
+  // 处理双击线条进行编辑
+  const handleLineDoubleClick = () => {
     setIsEditing(true)
     setEditValue(label)
   }
@@ -154,10 +153,16 @@ function MarkerConnector({
           e.stopPropagation()
           setHovered(false)
         }}
+        onDoubleClick={(e) => {
+          e.stopPropagation()
+          if (!connection.eventInfo) {
+            handleLineDoubleClick()
+          }
+        }}
       />
 
-      {/* 标签编辑（优先级高） */}
-      {!connection.eventInfo && (
+      {/* 标签编辑（只在编辑时显示） */}
+      {!connection.eventInfo && isEditing && (
         <Html
           position={[midpoint.x, midpoint.y, midpoint.z]}
           center
@@ -168,85 +173,63 @@ function MarkerConnector({
           }}
           zIndexRange={[100, 0]}
         >
-          {isEditing ? (
-            <div
+          <div
+            style={{
+              display: 'flex',
+              gap: '4px',
+              alignItems: 'center',
+            }}
+          >
+            <input
+              type="text"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              autoFocus
+              placeholder="输入标签..."
               style={{
-                display: 'flex',
-                gap: '4px',
-                alignItems: 'center',
-              }}
-            >
-              <input
-                type="text"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                autoFocus
-                style={{
-                  background: 'rgba(0, 0, 0, 0.9)',
-                  color: 'white',
-                  border: '1px solid #00ffff',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  outline: 'none',
-                  minWidth: '100px',
-                }}
-              />
-              <button
-                onClick={handleSave}
-                style={{
-                  background: '#00ffff',
-                  color: 'black',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                ✓
-              </button>
-              <button
-                onClick={handleCancel}
-                style={{
-                  background: '#ff4444',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          ) : (
-            <div
-              onDoubleClick={handleDoubleClick}
-              style={{
-                background: label ? 'rgba(0, 255, 255, 0.9)' : 'rgba(0, 255, 255, 0.3)',
-                color: 'black',
-                padding: '4px 8px',
+                background: 'rgba(0, 0, 0, 0.9)',
+                color: 'white',
+                border: '1px solid #00ffff',
                 borderRadius: '4px',
+                padding: '4px 8px',
                 fontSize: '11px',
                 fontWeight: '500',
-                whiteSpace: 'nowrap',
-                cursor: 'pointer',
-                border: '1px solid rgba(0, 255, 255, 0.5)',
-                userSelect: 'none',
-                minWidth: label ? 'auto' : '60px',
-                textAlign: 'center',
+                outline: 'none',
+                minWidth: '100px',
               }}
-              title="双击编辑"
+            />
+            <button
+              onClick={handleSave}
+              style={{
+                background: '#00ffff',
+                color: 'black',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                fontSize: '11px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
             >
-              {label || '双击添加'}
-            </div>
-          )}
+              ✓
+            </button>
+            <button
+              onClick={handleCancel}
+              style={{
+                background: '#ff4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                fontSize: '11px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              ✕
+            </button>
+          </div>
         </Html>
       )}
 

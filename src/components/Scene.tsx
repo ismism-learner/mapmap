@@ -189,7 +189,7 @@ function Scene({
             toMarker={toMarker}
             connection={connection}
             color="#00ffff"
-            lineWidth={2}
+            lineWidth={4}
             isFlat={isFlatMode}
             label={connection.label}
             onLabelChange={onConnectionLabelChange ? (newLabel) => onConnectionLabelChange(connection.id, newLabel) : undefined}
