@@ -57,6 +57,7 @@ function App() {
   const [autoConnect, setAutoConnect] = useState(true) // 自动连接模式（默认开启）
   const [manualConnectMode, setManualConnectMode] = useState(false) // 手动连接模式
   const [firstMarkerForConnect, setFirstMarkerForConnect] = useState<CustomMarker | null>(null)
+  const [eventCardMode, setEventCardMode] = useState(false) // 事件卡模式（默认关闭）
 
   // 国家选择状态
   const [selectedCountries, setSelectedCountries] = useState<number[]>([])
@@ -259,9 +260,14 @@ function App() {
     // 如果在手动连接模式下
     if (manualConnectMode) {
       if (!firstMarkerForConnect) {
-        // 选择第一个图钉
+        // 选择第一个图钉作为起点
         setFirstMarkerForConnect(marker)
-      } else if (firstMarkerForConnect.id !== marker.id) {
+        console.log('🎯 选择起点:', marker.info.title)
+      } else if (firstMarkerForConnect.id === marker.id) {
+        // 双击同一个图钉，取消选择
+        setFirstMarkerForConnect(null)
+        console.log('❌ 取消选择起点')
+      } else {
         // 选择第二个图钉，创建连接
         const newConnection: MarkerConnection = {
           id: generateId(),
@@ -277,16 +283,20 @@ function App() {
 
         if (!connectionExists) {
           setConnections((prev) => [...prev, newConnection])
+          console.log(`✅ 创建连接: ${firstMarkerForConnect.info.title} → ${marker.info.title}`)
         }
 
-        // 重置选择
-        setFirstMarkerForConnect(null)
+        // 将当前图钉设为新起点，支持连续连接
+        setFirstMarkerForConnect(marker)
+        console.log('🎯 新起点:', marker.info.title)
       }
-    } else {
-      // 普通模式：激活锚定事件面板
+    } else if (eventCardMode) {
+      // 事件卡模式：激活锚定事件面板
       handleActivateEvent(marker)
       setSelectedCity(null) // 关闭城市信息卡
+      console.log('📋 创建事件卡:', marker.info.title)
     }
+    // 否则什么都不做（图钉/连接模式下，只通过手动连接创建连接）
   }
 
   // 激活锚定事件（允许同一图钉创建多个事件卡）
@@ -433,6 +443,19 @@ function App() {
     setFirstMarkerForConnect(null) // 重置选择
     if (!newManualConnect) {
       setSelectedMarker(null) // 退出手动连接模式时关闭信息面板
+    }
+  }
+
+  // 切换事件卡模式
+  const handleToggleEventCardMode = () => {
+    const newEventCardMode = !eventCardMode
+    setEventCardMode(newEventCardMode)
+
+    // 开启事件卡模式时，给出提示
+    if (newEventCardMode) {
+      console.log('📋 事件卡模式已开启 - 点击图钉创建事件卡')
+    } else {
+      console.log('📋 事件卡模式已关闭')
     }
   }
 
@@ -691,6 +714,7 @@ function App() {
           onToggleEventInput={handleToggleEventInput}
           onToggleManualConnect={handleToggleManualConnect}
           onToggleAutoConnect={handleToggleAutoConnect}
+          onToggleEventCardMode={handleToggleEventCardMode}
           onToggleLayerControl={handleToggleLayerControl}
           onToggleManagement={handleToggleManagement}
           onToggleImageUpload={handleToggleImageUpload}
@@ -699,6 +723,7 @@ function App() {
           onTogglePaintMode={handleTogglePaintMode}
           autoConnectEnabled={autoConnect}
           manualConnectEnabled={manualConnectMode}
+          eventCardModeEnabled={eventCardMode}
           paintModeEnabled={paintMode}
           eventInputOpen={eventInputOpen}
           layerControlOpen={layerControlOpen}
