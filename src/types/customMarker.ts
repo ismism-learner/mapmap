@@ -18,6 +18,13 @@ export interface MarkerInfo {
   description: string
   links: MarkerLink[]
   images: MarkerImage[]
+  videoInfo?: {
+    bvid: string
+    title: string
+    cover: string
+    author: string
+    url: string
+  }
 }
 
 /**

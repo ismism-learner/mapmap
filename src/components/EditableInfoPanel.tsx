@@ -6,6 +6,7 @@ import {
   MarkerImage,
   generateId
 } from '../types/customMarker'
+import { fetchBilibiliVideoInfo, isBilibiliURL } from '../utils/bilibiliUtils'
 import './EditableInfoPanel.css'
 
 interface EditableInfoPanelProps {
@@ -31,6 +32,38 @@ function EditableInfoPanel({
   const [description, setDescription] = useState(marker.info.description)
   const [links, setLinks] = useState<MarkerLink[]>(marker.info.links)
   const [images, setImages] = useState<MarkerImage[]>(marker.info.images)
+  const [videoInfo, setVideoInfo] = useState(marker.info.videoInfo)
+  const [isLoadingVideo, setIsLoadingVideo] = useState(false)
+
+  // 添加B站视频
+  const handleAddBilibiliVideo = async () => {
+    const url = prompt('粘贴B站视频链接:')
+    if (!url) return
+
+    if (!isBilibiliURL(url)) {
+      alert('请输入有效的B站视频链接')
+      return
+    }
+
+    setIsLoadingVideo(true)
+    const info = await fetchBilibiliVideoInfo(url)
+    setIsLoadingVideo(false)
+
+    if (info) {
+      setVideoInfo(info)
+      // 自动设置标题为视频标题
+      if (!title || title === '新标记') {
+        setTitle(info.title)
+      }
+    } else {
+      alert('获取视频信息失败，请检查链接是否正确')
+    }
+  }
+
+  // 删除视频信息
+  const handleDeleteVideo = () => {
+    setVideoInfo(undefined)
+  }
 
   // 添加超链接
   const handleAddLink = () => {
@@ -66,7 +99,8 @@ function EditableInfoPanel({
       title,
       description,
       links,
-      images
+      images,
+      videoInfo
     })
     setIsEditing(false)
   }
@@ -77,6 +111,7 @@ function EditableInfoPanel({
     setDescription(marker.info.description)
     setLinks(marker.info.links)
     setImages(marker.info.images)
+    setVideoInfo(marker.info.videoInfo)
     setIsEditing(false)
   }
 
@@ -122,6 +157,37 @@ function EditableInfoPanel({
             </p>
           )}
         </div>
+
+        {/* B站视频 */}
+        {videoInfo && (
+          <div className="video-section">
+            <label>B站视频:</label>
+            <a
+              href={videoInfo.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="video-card"
+            >
+              <img
+                src={videoInfo.cover}
+                alt={videoInfo.title}
+                className="video-cover"
+              />
+              <div className="video-info">
+                <div className="video-title">{videoInfo.title}</div>
+                <div className="video-author">UP主: {videoInfo.author}</div>
+              </div>
+            </a>
+            {isEditing && (
+              <button
+                className="delete-video-btn"
+                onClick={handleDeleteVideo}
+              >
+                删除视频
+              </button>
+            )}
+          </div>
+        )}
 
         {/* 图片列表 */}
         {images.length > 0 && (
@@ -172,6 +238,13 @@ function EditableInfoPanel({
         {/* 编辑模式下的添加按钮 */}
         {isEditing && (
           <div className="add-buttons">
+            <button
+              className="add-btn"
+              onClick={handleAddBilibiliVideo}
+              disabled={isLoadingVideo || !!videoInfo}
+            >
+              {isLoadingVideo ? '加载中...' : videoInfo ? '✓ 已添加视频' : '+ 添加B站视频'}
+            </button>
             <button className="add-btn" onClick={handleAddImage}>
               + 添加图片
             </button>
